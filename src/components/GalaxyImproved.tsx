@@ -10,7 +10,10 @@ import SearchBar from './SearchBar'
 import VocationalTest from './VocationalTest'
 import GamificationPanel from './GamificationPanel'
 import AuthModal from './AuthModal'
+import AdminPanel from './AdminPanel'
+import FreePlanLimitModal from './FreePlanLimitModal'
 import { useGamification } from '@/hooks/useGamification'
+import { useFreePlanLimit } from '@/hooks/useFreePlanLimit'
 
 export default function Galaxy() {
   const [professions, setProfessions] = useState<Profession[]>([])
@@ -24,6 +27,7 @@ export default function Galaxy() {
   const [vocationalResult, setVocationalResult] = useState<VocationalResult | null>(null)
   const [showGamificationPanel, setShowGamificationPanel] = useState(false)
   const [showAuthModal, setShowAuthModal] = useState(false)
+  const [showAdminPanel, setShowAdminPanel] = useState(false)
   const [currentUser, setCurrentUser] = useState<AuthUser | null>(null)
   
   const containerRef = useRef<HTMLDivElement>(null)
@@ -37,6 +41,18 @@ export default function Galaxy() {
     trackTestCompleted,
     clearNewAchievements
   } = useGamification()
+
+  // Sistema de limite do plano gratuito
+  const {
+    remainingViews,
+    isBlocked,
+    timeUntilReset,
+    showLimitModal,
+    setShowLimitModal,
+    canViewProfession,
+    markProfessionViewed,
+    dailyLimit
+  } = useFreePlanLimit()
 
   const fetchProfessions = async () => {
     try {
@@ -180,10 +196,19 @@ export default function Galaxy() {
   }
 
   const handleProfessionClick = (profession: Profession) => {
-    setSelectedProfession(profession)
-    // Track para gamificação
-    trackProfessionViewed(profession.name)
-    trackAreaExplored(profession.area)
+    // Verificar se pode visualizar a profissão (plano gratuito)
+    if (!canViewProfession(profession.name)) {
+      setShowLimitModal(true)
+      return
+    }
+
+    // Marcar como visualizada
+    if (markProfessionViewed(profession.name)) {
+      setSelectedProfession(profession)
+      // Track para gamificação
+      trackProfessionViewed(profession.name)
+      trackAreaExplored(profession.area)
+    }
   }
 
   const handleVocationalTestComplete = (result: VocationalResult) => {
@@ -191,6 +216,47 @@ export default function Galaxy() {
     setShowVocationalTest(false)
     // Track teste completado
     trackTestCompleted()
+  }
+
+  const handleRelatedProfessionClick = async (professionName: string) => {
+    // Verificar limite do plano gratuito
+    if (!canViewProfession(professionName)) {
+      setShowLimitModal(true)
+      return
+    }
+
+    // Buscar a profissão relacionada na lista atual
+    const relatedProfession = professions.find(p => p.name === professionName)
+    
+    if (relatedProfession) {
+      // Se encontrou na lista atual, mostrar o modal
+      if (markProfessionViewed(relatedProfession.name)) {
+        setSelectedProfession(relatedProfession)
+        // Track para gamificação
+        trackProfessionViewed(relatedProfession.name)
+        trackAreaExplored(relatedProfession.area)
+      }
+    } else {
+      // Se não encontrou, buscar na API (talvez a profissão não esteja carregada por filtros)
+      try {
+        const response = await fetch(`/api/professions?search=${encodeURIComponent(professionName)}`)
+        const data = await response.json()
+        const foundProfession = data.find((p: Profession) => p.name === professionName)
+        
+        if (foundProfession) {
+          if (markProfessionViewed(foundProfession.name)) {
+            setSelectedProfession(foundProfession)
+            // Track para gamificação
+            trackProfessionViewed(foundProfession.name)
+            trackAreaExplored(foundProfession.area)
+          }
+        } else {
+          console.warn(`Profissão "${professionName}" não encontrada`)
+        }
+      } catch (error) {
+        console.error('Erro ao buscar profissão relacionada:', error)
+      }
+    }
   }
 
   const isProfessionHighlighted = (professionName: string): boolean => {
@@ -218,67 +284,99 @@ export default function Galaxy() {
       />
 
       {/* Top Right Controls */}
-      <div className="absolute top-4 right-4 z-10 flex flex-col gap-3">
-        {/* User Authentication */}
-        {currentUser ? (
-          <div className="flex items-center gap-3">
-            <div className="bg-gradient-to-r from-blue-500 to-purple-500 text-white px-4 py-2 rounded-full font-semibold shadow-lg flex items-center gap-2">
-              <span>👤 {currentUser.name}</span>
+      <div className="absolute top-4 right-4 z-20 space-y-2 min-w-[200px]">
+        {/* Authentication Row */}
+        <div className="flex justify-end">
+          {currentUser ? (
+            <div className="flex items-center gap-2">
+              <div className="bg-gradient-to-r from-blue-500 to-purple-500 text-white px-3 py-1.5 rounded-full text-sm font-medium shadow-md flex items-center gap-2">
+                <span>👤 {currentUser.name.split(' ')[0]}</span>
+              </div>
+              <button
+                onClick={handleLogout}
+                className="bg-gray-600 hover:bg-gray-700 text-white px-2 py-1.5 rounded-full text-xs transition-colors"
+              >
+                Sair
+              </button>
             </div>
+          ) : (
             <button
-              onClick={handleLogout}
-              className="bg-gray-600 hover:bg-gray-700 text-white px-3 py-2 rounded-full text-sm transition-colors"
+              onClick={() => setShowAuthModal(true)}
+              className="bg-gradient-to-r from-blue-500 to-purple-500 text-white px-4 py-2 rounded-full text-sm font-medium shadow-md hover:shadow-lg transform hover:scale-105 transition-all duration-300 flex items-center gap-2"
             >
-              Sair
+              👤 Entrar
             </button>
-          </div>
-        ) : (
-          <button
-            onClick={() => setShowAuthModal(true)}
-            className="bg-gradient-to-r from-blue-500 to-purple-500 text-white px-6 py-3 rounded-full font-semibold shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300 flex items-center gap-2"
-          >
-            👤 Entrar / Cadastrar
-          </button>
-        )}
+          )}
+        </div>
 
-        {/* User Progress */}
-        {userProgress && (
-          <div 
-            onClick={() => setShowGamificationPanel(true)}
-            className="bg-gradient-to-r from-yellow-500 to-orange-500 text-white px-4 py-2 rounded-full font-semibold shadow-lg cursor-pointer hover:shadow-xl transform hover:scale-105 transition-all duration-300 flex items-center gap-2"
-          >
-            <span>⭐ Nível {Math.floor(userProgress.experience / 100) + 1}</span>
-            <span className="text-xs bg-white text-orange-600 px-2 py-1 rounded-full">
-              {userProgress.experience} XP
-            </span>
-          </div>
-        )}
+        {/* Status Row */}
+        <div className="flex flex-col items-end gap-2">
+          {/* User Progress */}
+          {userProgress && (
+            <div 
+              onClick={() => setShowGamificationPanel(true)}
+              className="bg-gradient-to-r from-yellow-500 to-orange-500 text-white px-3 py-1.5 rounded-full text-sm font-medium shadow-md cursor-pointer hover:shadow-lg transform hover:scale-105 transition-all duration-300 flex items-center gap-2"
+            >
+              <span>⭐ Nv.{Math.floor(userProgress.experience / 100) + 1}</span>
+              <span className="text-xs bg-white text-orange-600 px-1.5 py-0.5 rounded-full">
+                {userProgress.experience}
+              </span>
+            </div>
+          )}
+
+          {/* Free Plan Indicator */}
+          {!currentUser && (
+            <button
+              onClick={() => setShowLimitModal(true)}
+              className={`${
+                remainingViews === 0 ? 
+                'bg-red-500 hover:bg-red-600' : 
+                'bg-green-500 hover:bg-green-600'
+              } text-white px-3 py-1.5 rounded-full text-sm font-medium shadow-md hover:shadow-lg transition-all duration-300`}
+            >
+              🆓 {remainingViews}/{dailyLimit}
+            </button>
+          )}
+        </div>
         
-        {/* Vocational Test Button */}
-        <button
-          onClick={() => setShowVocationalTest(true)}
-          className="bg-gradient-to-r from-purple-500 to-pink-500 text-white px-6 py-3 rounded-full font-semibold shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300 flex items-center gap-2"
-        >
-          🧠 Teste Vocacional
-          {vocationalResult && (
-            <span className="bg-white text-purple-600 text-xs px-2 py-1 rounded-full">
-              Resultados
-            </span>
-          )}
-        </button>
+        {/* Action Buttons Row */}
+        <div className="flex flex-wrap justify-end gap-1.5 max-w-[240px]">
+          {/* Vocational Test Button */}
+          <button
+            onClick={() => setShowVocationalTest(true)}
+            className="bg-gradient-to-r from-purple-500 to-pink-500 text-white px-3 py-1.5 rounded-full text-xs font-medium shadow-md hover:shadow-lg transform hover:scale-105 transition-all duration-300 flex items-center gap-1"
+          >
+            🧠 Teste
+            {vocationalResult && (
+              <span className="bg-white text-purple-600 text-xs px-1 py-0.5 rounded-full">
+                ✓
+              </span>
+            )}
+          </button>
 
-        {/* Gamification Button */}
-        <button
-          onClick={() => setShowGamificationPanel(true)}
-          className="bg-gradient-to-r from-green-500 to-blue-500 text-white px-6 py-3 rounded-full font-semibold shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300 flex items-center gap-2"
-        >
-          🎮 Progresso & Jornadas
-          {newAchievements.length > 0 && (
-            <span className="bg-red-500 text-white text-xs px-2 py-1 rounded-full animate-pulse">
-              {newAchievements.length}
-            </span>
+          {/* Gamification Button */}
+          <button
+            onClick={() => setShowGamificationPanel(true)}
+            className="bg-gradient-to-r from-green-500 to-blue-500 text-white px-3 py-1.5 rounded-full text-xs font-medium shadow-md hover:shadow-lg transform hover:scale-105 transition-all duration-300 flex items-center gap-1"
+          >
+            🎮 Jornadas
+            {newAchievements.length > 0 && (
+              <span className="bg-red-500 text-white text-xs px-1 py-0.5 rounded-full animate-pulse">
+                {newAchievements.length}
+              </span>
+            )}
+          </button>
+
+          {/* Admin Panel Button */}
+          {currentUser && (
+            <button
+              onClick={() => setShowAdminPanel(true)}
+              className="bg-gradient-to-r from-orange-500 to-red-500 text-white px-3 py-1.5 rounded-full text-xs font-medium shadow-md hover:shadow-lg transform hover:scale-105 transition-all duration-300 flex items-center gap-1"
+            >
+              🛠️ Admin
+            </button>
           )}
-        </button>
+        </div>
       </div>
 
       {/* Galaxy Container */}
@@ -370,6 +468,7 @@ export default function Galaxy() {
           <ProfessionModal
             profession={selectedProfession}
             onClose={() => setSelectedProfession(null)}
+            onRelatedProfessionClick={handleRelatedProfessionClick}
           />
         )}
       </AnimatePresence>
@@ -412,6 +511,34 @@ export default function Galaxy() {
         )}
       </AnimatePresence>
 
+      {/* Admin Panel */}
+      <AnimatePresence>
+        {showAdminPanel && (
+          <AdminPanel
+            isOpen={showAdminPanel}
+            onClose={() => {
+              setShowAdminPanel(false)
+              // Refresh professions after admin changes
+              fetchProfessions()
+            }}
+          />
+        )}
+      </AnimatePresence>
+
+      {/* Free Plan Limit Modal */}
+      <AnimatePresence>
+        {showLimitModal && (
+          <FreePlanLimitModal
+            isOpen={showLimitModal}
+            onClose={() => setShowLimitModal(false)}
+            remainingViews={remainingViews}
+            timeUntilReset={timeUntilReset}
+            isBlocked={isBlocked}
+            dailyLimit={dailyLimit}
+          />
+        )}
+      </AnimatePresence>
+
       {/* Achievement Notifications */}
       <AnimatePresence>
         {newAchievements.map((achievement, index) => (
@@ -445,7 +572,16 @@ export default function Galaxy() {
         <div>🖱️ Arraste para navegar</div>
         <div>🔍 Use a roda do mouse para zoom</div>
         <div>⭐ Clique nas estrelas para ver detalhes</div>
+        <div>🔗 Clique nas profissões relacionadas para explorá-las</div>
         <div>🧠 Faça o teste vocacional para recomendações personalizadas</div>
+        {!currentUser && (
+          <div className="mt-2 pt-2 border-t border-gray-600">
+            <div>🆓 <strong>Plano Gratuito:</strong> {remainingViews}/{dailyLimit} visualizações restantes</div>
+            {isBlocked && timeUntilReset && (
+              <div className="text-yellow-300">⏰ Reset em: {timeUntilReset}</div>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Result Summary */}

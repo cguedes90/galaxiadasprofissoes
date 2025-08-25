@@ -235,17 +235,26 @@ export default function AuthModal({ isOpen, onClose, onLogin, onRegister }: Auth
                 {errors.password && <p className="text-red-500 text-sm mt-1">{errors.password}</p>}
               </div>
 
-              <div className="flex items-center">
-                <input
-                  type="checkbox"
-                  id="rememberMe"
-                  checked={loginForm.rememberMe}
-                  onChange={(e) => setLoginForm({ ...loginForm, rememberMe: e.target.checked })}
-                  className="mr-2"
-                />
-                <label htmlFor="rememberMe" className="text-sm text-gray-600">
-                  Lembrar de mim
-                </label>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center">
+                  <input
+                    type="checkbox"
+                    id="rememberMe"
+                    checked={loginForm.rememberMe}
+                    onChange={(e) => setLoginForm({ ...loginForm, rememberMe: e.target.checked })}
+                    className="mr-2"
+                  />
+                  <label htmlFor="rememberMe" className="text-sm text-gray-600">
+                    Lembrar de mim
+                  </label>
+                </div>
+                <a 
+                  href="/forgot-password" 
+                  className="text-sm text-blue-600 hover:text-blue-800 hover:underline"
+                  onClick={onClose}
+                >
+                  Esqueceu a senha?
+                </a>
               </div>
 
               <button

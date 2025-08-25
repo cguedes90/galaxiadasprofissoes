@@ -16,7 +16,7 @@ export default function SearchBar({
   areas 
 }: SearchBarProps) {
   return (
-    <div className="absolute top-4 left-4 right-4 z-10 flex flex-col sm:flex-row gap-2 sm:gap-4">
+    <div className="absolute top-4 left-4 right-80 z-10 flex flex-col sm:flex-row gap-2 sm:gap-4">
       <div className="flex-1 relative">
         <input
           type="text"

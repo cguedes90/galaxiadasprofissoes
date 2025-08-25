@@ -6,9 +6,10 @@ import { Profession } from '@/types/profession'
 interface ProfessionModalProps {
   profession: Profession
   onClose: () => void
+  onRelatedProfessionClick?: (professionName: string) => void
 }
 
-export default function ProfessionModal({ profession, onClose }: ProfessionModalProps) {
+export default function ProfessionModal({ profession, onClose, onRelatedProfessionClick }: ProfessionModalProps) {
   const formatSalary = (min: number, max: number) => {
     return `R$ ${min.toLocaleString()} - R$ ${max.toLocaleString()}`
   }
@@ -133,14 +134,21 @@ export default function ProfessionModal({ profession, onClose }: ProfessionModal
               </h3>
               <div className="flex flex-wrap gap-2">
                 {profession.related_professions.map((related, index) => (
-                  <span
+                  <button
                     key={index}
-                    className="bg-purple-100 text-purple-700 px-3 py-1 rounded-full text-sm"
+                    onClick={() => onRelatedProfessionClick?.(related)}
+                    className="bg-purple-100 hover:bg-purple-200 text-purple-700 hover:text-purple-800 px-3 py-1 rounded-full text-sm transition-colors cursor-pointer transform hover:scale-105 duration-200 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-opacity-50"
+                    title={`Clique para ver detalhes de ${related}`}
                   >
                     {related}
-                  </span>
+                  </button>
                 ))}
               </div>
+              {onRelatedProfessionClick && (
+                <p className="text-xs text-gray-500 mt-2">
+                  💡 Clique nas profissões acima para explorar mais detalhes
+                </p>
+              )}
             </section>
           )}
         </div>

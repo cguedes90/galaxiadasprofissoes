@@ -9,7 +9,10 @@
       "Bash(curl:*)",
       "Bash(npm install:*)",
       "Bash(psql:*)",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "Bash(git push:*)",
+      "Bash(grep:*)",
+      "Bash(node:*)"
     ],
     "deny": [],
     "ask": []
