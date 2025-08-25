@@ -1,0 +1,101 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100" height="100">
+  <defs>
+    <!-- Gradient for the galaxy background -->
+    <radialGradient id="galaxyGradient" cx="50%" cy="50%" r="60%">
+      <stop offset="0%" style="stop-color:#1a202c;stop-opacity:0.8" />
+      <stop offset="40%" style="stop-color:#2d3748;stop-opacity:0.9" />
+      <stop offset="80%" style="stop-color:#4a5568;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#1a202c;stop-opacity:1" />
+    </radialGradient>
+    
+    <!-- Gradient for main star -->
+    <radialGradient id="starGradient" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" style="stop-color:#ffd700;stop-opacity:1" />
+      <stop offset="70%" style="stop-color:#ff6b35;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#e53e3e;stop-opacity:0.8" />
+    </radialGradient>
+    
+    <!-- Gradient for secondary stars -->
+    <radialGradient id="starGradient2" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" style="stop-color:#90cdf4;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#4299e1;stop-opacity:0.8" />
+    </radialGradient>
+    
+    <radialGradient id="starGradient3" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" style="stop-color:#d6bcfa;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#9f7aea;stop-opacity:0.8" />
+    </radialGradient>
+    
+    <radialGradient id="starGradient4" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" style="stop-color:#fbb6ce;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#ed64a6;stop-opacity:0.8" />
+    </radialGradient>
+  </defs>
+  
+  <!-- Galaxy background -->
+  <circle cx="50" cy="50" r="48" fill="url(#galaxyGradient)" stroke="#2d3748" stroke-width="2"/>
+  
+  <!-- Cosmic dust/nebula effect -->
+  <circle cx="30" cy="25" r="8" fill="#4a5568" opacity="0.3"/>
+  <circle cx="70" cy="75" r="6" fill="#4a5568" opacity="0.2"/>
+  <circle cx="75" cy="30" r="4" fill="#4a5568" opacity="0.25"/>
+  
+  <!-- Main central star (largest) -->
+  <circle cx="50" cy="50" r="8" fill="url(#starGradient)">
+    <animate attributeName="opacity" values="0.8;1;0.8" dur="2s" repeatCount="indefinite"/>
+  </circle>
+  
+  <!-- Star glow effect -->
+  <circle cx="50" cy="50" r="12" fill="url(#starGradient)" opacity="0.3">
+    <animate attributeName="r" values="10;14;10" dur="2s" repeatCount="indefinite"/>
+    <animate attributeName="opacity" values="0.2;0.4;0.2" dur="2s" repeatCount="indefinite"/>
+  </circle>
+  
+  <!-- Secondary stars representing different professions -->
+  <circle cx="25" cy="35" r="4" fill="url(#starGradient2)">
+    <animate attributeName="opacity" values="0.6;1;0.6" dur="3s" repeatCount="indefinite"/>
+  </circle>
+  
+  <circle cx="75" cy="40" r="3.5" fill="url(#starGradient3)">
+    <animate attributeName="opacity" values="0.7;1;0.7" dur="2.5s" repeatCount="indefinite"/>
+  </circle>
+  
+  <circle cx="35" cy="70" r="3" fill="url(#starGradient4)">
+    <animate attributeName="opacity" values="0.5;0.9;0.5" dur="4s" repeatCount="indefinite"/>
+  </circle>
+  
+  <circle cx="65" cy="25" r="2.5" fill="url(#starGradient2)">
+    <animate attributeName="opacity" values="0.6;1;0.6" dur="3.5s" repeatCount="indefinite"/>
+  </circle>
+  
+  <circle cx="20" cy="60" r="2" fill="url(#starGradient3)">
+    <animate attributeName="opacity" values="0.4;0.8;0.4" dur="2.8s" repeatCount="indefinite"/>
+  </circle>
+  
+  <circle cx="80" cy="65" r="2.5" fill="url(#starGradient4)">
+    <animate attributeName="opacity" values="0.6;1;0.6" dur="3.2s" repeatCount="indefinite"/>
+  </circle>
+  
+  <!-- Small background stars -->
+  <circle cx="15" cy="45" r="1" fill="#e2e8f0" opacity="0.6">
+    <animate attributeName="opacity" values="0.3;0.8;0.3" dur="5s" repeatCount="indefinite"/>
+  </circle>
+  
+  <circle cx="85" cy="50" r="1" fill="#e2e8f0" opacity="0.7">
+    <animate attributeName="opacity" values="0.4;0.9;0.4" dur="4.5s" repeatCount="indefinite"/>
+  </circle>
+  
+  <circle cx="45" cy="15" r="1" fill="#e2e8f0" opacity="0.5">
+    <animate attributeName="opacity" values="0.2;0.7;0.2" dur="6s" repeatCount="indefinite"/>
+  </circle>
+  
+  <circle cx="55" cy="85" r="1" fill="#e2e8f0" opacity="0.6">
+    <animate attributeName="opacity" values="0.3;0.8;0.3" dur="3.8s" repeatCount="indefinite"/>
+  </circle>
+  
+  <!-- Connection lines between stars (constellation effect) -->
+  <path d="M50,50 L25,35" stroke="#4a5568" stroke-width="0.5" opacity="0.3"/>
+  <path d="M50,50 L75,40" stroke="#4a5568" stroke-width="0.5" opacity="0.3"/>
+  <path d="M25,35 L35,70" stroke="#4a5568" stroke-width="0.5" opacity="0.2"/>
+  <path d="M75,40 L65,25" stroke="#4a5568" stroke-width="0.5" opacity="0.2"/>
+</svg>

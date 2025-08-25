@@ -3,6 +3,7 @@ import { query } from '@/lib/database'
 import bcrypt from 'bcryptjs'
 import jwt from 'jsonwebtoken'
 import { RegisterData } from '@/types/user'
+import { EmailService } from '@/lib/email-service'
 
 const JWT_SECRET = process.env.JWT_SECRET || 'galaxia-secret-key'
 
@@ -126,10 +127,20 @@ export async function POST(request: Request) {
       { expiresIn: '7d' }
     )
 
+    // Enviar email de boas-vindas
+    try {
+      const appUrl = `${request.headers.get('origin') || 'http://localhost:3000'}`
+      await EmailService.sendWelcomeEmail(data, appUrl)
+      console.log('✅ Email de boas-vindas enviado para:', data.email)
+    } catch (emailError) {
+      console.error('❌ Erro ao enviar email de boas-vindas:', emailError)
+      // Não falha o registro se o email não for enviado
+    }
+
     // Resposta de sucesso (sem enviar a senha)
     return NextResponse.json({
       success: true,
-      message: 'Usuário criado com sucesso',
+      message: 'Usuário criado com sucesso! Verifique seu email para começar.',
       user: {
         id: newUser.id,
         email: newUser.email,
