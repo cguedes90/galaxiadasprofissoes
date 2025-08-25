@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bem-vindo à Galáxia das Profissões!</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 600px;
+            margin: 0 auto;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 20px;
+        }
+        
+        .email-container {
+            background: white;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 50%, #ec4899 100%);
+            color: white;
+            text-align: center;
+            padding: 40px 20px;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .header::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="20" cy="20" r="1" fill="white" opacity="0.1"><animate attributeName="opacity" values="0.1;0.8;0.1" dur="3s" repeatCount="indefinite"/></circle><circle cx="50" cy="30" r="1.5" fill="white" opacity="0.1"><animate attributeName="opacity" values="0.1;0.6;0.1" dur="4s" repeatCount="indefinite"/></circle><circle cx="80" cy="40" r="1" fill="white" opacity="0.1"><animate attributeName="opacity" values="0.1;0.9;0.1" dur="2s" repeatCount="indefinite"/></circle><circle cx="30" cy="60" r="1.2" fill="white" opacity="0.1"><animate attributeName="opacity" values="0.1;0.7;0.1" dur="5s" repeatCount="indefinite"/></circle><circle cx="70" cy="70" r="1" fill="white" opacity="0.1"><animate attributeName="opacity" values="0.1;0.5;0.1" dur="3.5s" repeatCount="indefinite"/></circle></svg>');
+        }
+        
+        .logo {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            position: relative;
+            z-index: 1;
+        }
+        
+        .header h1 {
+            font-size: 2em;
+            margin: 0;
+            font-weight: 600;
+            position: relative;
+            z-index: 1;
+        }
+        
+        .content {
+            padding: 40px 30px;
+        }
+        
+        .welcome-message {
+            font-size: 1.1em;
+            margin-bottom: 30px;
+            color: #4a5568;
+        }
+        
+        .highlight {
+            background: linear-gradient(120deg, #a78bfa 0%, #ec4899 100%);
+            background-clip: text;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-weight: 600;
+        }
+        
+        .features {
+            background: #f8fafc;
+            border-radius: 12px;
+            padding: 30px;
+            margin: 30px 0;
+        }
+        
+        .feature-item {
+            display: flex;
+            align-items: flex-start;
+            margin-bottom: 20px;
+            padding: 15px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+        
+        .feature-item:last-child {
+            margin-bottom: 0;
+        }
+        
+        .feature-icon {
+            font-size: 1.5em;
+            margin-right: 15px;
+            min-width: 40px;
+        }
+        
+        .feature-content h3 {
+            margin: 0 0 5px 0;
+            color: #2d3748;
+            font-size: 1.1em;
+        }
+        
+        .feature-content p {
+            margin: 0;
+            color: #718096;
+            font-size: 0.95em;
+        }
+        
+        .cta-section {
+            text-align: center;
+            margin: 40px 0;
+        }
+        
+        .cta-button {
+            display: inline-block;
+            background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+            color: white;
+            text-decoration: none;
+            padding: 15px 30px;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 1.1em;
+            box-shadow: 0 4px 15px rgba(79, 70, 229, 0.3);
+            transition: transform 0.2s ease;
+        }
+        
+        .cta-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(79, 70, 229, 0.4);
+        }
+        
+        .user-info {
+            background: linear-gradient(135deg, #e0e7ff 0%, #f3e8ff 100%);
+            border-radius: 10px;
+            padding: 20px;
+            margin: 30px 0;
+            border-left: 4px solid #7c3aed;
+        }
+        
+        .user-info h3 {
+            margin: 0 0 10px 0;
+            color: #5b21b6;
+        }
+        
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 15px;
+            margin: 30px 0;
+        }
+        
+        .stat-item {
+            text-align: center;
+            background: white;
+            padding: 20px 15px;
+            border-radius: 10px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        
+        .stat-number {
+            font-size: 2em;
+            font-weight: bold;
+            background: linear-gradient(135deg, #4f46e5 0%, #ec4899 100%);
+            background-clip: text;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .stat-label {
+            font-size: 0.9em;
+            color: #718096;
+            margin-top: 5px;
+        }
+        
+        .tips {
+            background: #fff5d6;
+            border-radius: 10px;
+            padding: 25px;
+            margin: 30px 0;
+            border-left: 4px solid #fbbf24;
+        }
+        
+        .tips h3 {
+            margin: 0 0 15px 0;
+            color: #92400e;
+            display: flex;
+            align-items: center;
+        }
+        
+        .tips ul {
+            margin: 0;
+            padding-left: 20px;
+        }
+        
+        .tips li {
+            margin-bottom: 8px;
+            color: #78350f;
+        }
+        
+        .footer {
+            background: #1a202c;
+            color: #e2e8f0;
+            text-align: center;
+            padding: 30px 20px;
+            font-size: 0.9em;
+        }
+        
+        .footer a {
+            color: #9f7aea;
+            text-decoration: none;
+        }
+        
+        .social-links {
+            margin: 20px 0;
+        }
+        
+        .social-links a {
+            display: inline-block;
+            margin: 0 10px;
+            padding: 8px 12px;
+            background: #2d3748;
+            border-radius: 6px;
+            color: #e2e8f0;
+            text-decoration: none;
+        }
+        
+        @media (max-width: 600px) {
+            body {
+                padding: 10px;
+            }
+            
+            .content {
+                padding: 30px 20px;
+            }
+            
+            .header {
+                padding: 30px 20px;
+            }
+            
+            .features {
+                padding: 20px;
+            }
+            
+            .stats {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="email-container">
+        <div class="header">
+            <div class="logo">🌌</div>
+            <h1>Bem-vindo à Galáxia das Profissões!</h1>
+        </div>
+        
+        <div class="content">
+            <div class="welcome-message">
+                Olá <span class="highlight">{{userName}}</span>! 🎉<br><br>
+                
+                Que alegria ter você conosco na <strong>Galáxia das Profissões</strong>! Sua jornada de descoberta profissional começa agora, e estamos aqui para te guiar por cada estrela deste universo de possibilidades.
+            </div>
+            
+            <div class="user-info">
+                <h3>📋 Seu Perfil</h3>
+                <p><strong>Nome:</strong> {{userName}}</p>
+                <p><strong>Email:</strong> {{userEmail}}</p>
+                <p><strong>Escolaridade:</strong> {{userEducation}}</p>
+                <p><strong>Data de cadastro:</strong> {{registrationDate}}</p>
+            </div>
+            
+            <div class="features">
+                <h2 style="text-align: center; margin-bottom: 30px; color: #2d3748;">🚀 O que você pode explorar:</h2>
+                
+                <div class="feature-item">
+                    <div class="feature-icon">⭐</div>
+                    <div class="feature-content">
+                        <h3>Navegue pela Galáxia</h3>
+                        <p>Descubra mais de 29 profissões organizadas como estrelas. Arraste para navegar e use zoom para explorar!</p>
+                    </div>
+                </div>
+                
+                <div class="feature-item">
+                    <div class="feature-icon">🧠</div>
+                    <div class="feature-content">
+                        <h3>Teste Vocacional RIASEC</h3>
+                        <p>Descubra suas aptidões com nosso teste baseado na teoria RIASEC e receba recomendações personalizadas!</p>
+                    </div>
+                </div>
+                
+                <div class="feature-item">
+                    <div class="feature-icon">🎮</div>
+                    <div class="feature-content">
+                        <h3>Sistema de Gamificação</h3>
+                        <p>Ganhe XP explorando profissões, desbloqueie conquistas e suba de nível na sua jornada!</p>
+                    </div>
+                </div>
+                
+                <div class="feature-item">
+                    <div class="feature-icon">🎯</div>
+                    <div class="feature-content">
+                        <h3>Jornadas Guiadas</h3>
+                        <p>Siga roteiros personalizados para explorar áreas de interesse de forma estruturada!</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="stats">
+                <div class="stat-item">
+                    <div class="stat-number">29</div>
+                    <div class="stat-label">Profissões</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number">8</div>
+                    <div class="stat-label">Áreas</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number">10</div>
+                    <div class="stat-label">Conquistas</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number">3</div>
+                    <div class="stat-label">Jornadas</div>
+                </div>
+            </div>
+            
+            <div class="tips">
+                <h3>💡 Dicas para começar:</h3>
+                <ul>
+                    <li><strong>Faça o Teste Vocacional primeiro</strong> - ele vai destacar as profissões mais compatíveis com seu perfil</li>
+                    <li><strong>Explore diferentes áreas</strong> - use o filtro para navegar por áreas específicas</li>
+                    <li><strong>Ganhe XP explorando</strong> - cada profissão que você visualizar soma pontos!</li>
+                    <li><strong>Complete as Jornadas</strong> - elas são roteiros estruturados para sua exploração</li>
+                    <li><strong>Acompanhe seu progresso</strong> - veja suas conquistas no painel de gamificação</li>
+                </ul>
+            </div>
+            
+            <div class="cta-section">
+                <a href="{{appUrl}}" class="cta-button">🌟 Começar Minha Jornada</a>
+            </div>
+            
+            <div style="background: #f0f8ff; padding: 20px; border-radius: 10px; border-left: 4px solid #3182ce; margin: 30px 0;">
+                <h3 style="margin: 0 0 10px 0; color: #2c5282;">🎯 Próximos Passos Recomendados:</h3>
+                <ol style="margin: 0; padding-left: 20px; color: #2d3748;">
+                    <li>Complete seu perfil (caso ainda não tenha feito)</li>
+                    <li>Realize o Teste Vocacional RIASEC</li>
+                    <li>Explore as profissões recomendadas para você</li>
+                    <li>Inicie uma Jornada Guiada da sua área de interesse</li>
+                    <li>Compartilhe suas descobertas com amigos!</li>
+                </ol>
+            </div>
+            
+            <div style="text-align: center; margin: 40px 0; padding: 20px; background: linear-gradient(135deg, #fef7ff 0%, #f3e8ff 100%); border-radius: 10px;">
+                <h3 style="color: #7c3aed; margin: 0 0 10px 0;">🤝 Precisa de Ajuda?</h3>
+                <p style="margin: 0; color: #6b46c1;">Nossa equipe está aqui para te apoiar! Entre em contato conosco a qualquer momento.</p>
+            </div>
+        </div>
+        
+        <div class="footer">
+            <div class="social-links">
+                <a href="#">📧 Suporte</a>
+                <a href="#">📱 Instagram</a>
+                <a href="#">🐦 Twitter</a>
+                <a href="#">💼 LinkedIn</a>
+            </div>
+            
+            <p>© 2025 Galáxia das Profissões. Todos os direitos reservados.</p>
+            <p style="font-size: 0.8em; color: #a0aec0;">
+                Este é um email automático. Se você não se cadastrou em nossa plataforma, 
+                <a href="#" style="color: #9f7aea;">clique aqui</a> para reportar.
+            </p>
+        </div>
+    </div>
+</body>
+</html>
