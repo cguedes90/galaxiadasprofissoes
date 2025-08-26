@@ -1,7 +1,9 @@
-import { NextResponse } from 'next/server'
+import { NextRequest } from 'next/server'
 import { query } from '@/lib/database'
+import { ApiResponse } from '@/lib/api-response'
+import { generalApiRateLimit } from '@/lib/rate-limiter'
 
-export async function GET(request: Request) {
+async function handleGET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
     const search = searchParams.get('search')
@@ -28,14 +30,17 @@ export async function GET(request: Request) {
     sql += ' ORDER BY name'
 
     const result = await query(sql, params)
-    return NextResponse.json(result.rows)
+    return ApiResponse.success(result.rows, {
+      total: result.rows.length,
+      filters: { search, area }
+    })
   } catch (error) {
     console.error('Database error:', error)
-    return NextResponse.json({ error: 'Falha ao buscar profissões' }, { status: 500 })
+    return ApiResponse.databaseError('Falha ao buscar profissões')
   }
 }
 
-export async function POST(request: Request) {
+async function handlePOST(request: NextRequest) {
   try {
     const body = await request.json()
     const {
@@ -54,6 +59,14 @@ export async function POST(request: Request) {
       y_position
     } = body
 
+    // Validation
+    if (!name || !description || !area) {
+      return ApiResponse.validationError(
+        'Nome, descrição e área são obrigatórios',
+        { missing_fields: { name: !name, description: !description, area: !area } }
+      )
+    }
+
     const result = await query(
       `INSERT INTO professions 
        (name, description, area, required_education, salary_min, salary_max, 
@@ -62,15 +75,21 @@ export async function POST(request: Request) {
        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13) 
        RETURNING *`,
       [
-        name, description, area, required_education, salary_min, salary_max,
-        formation_time, main_activities, certifications, related_professions,
-        icon_color, x_position, y_position
+        name, description, area, required_education, salary_min || 0, salary_max || 0,
+        formation_time || '4 anos', main_activities || [], certifications || [], related_professions || [],
+        icon_color || '#ffffff', x_position || 0, y_position || 0
       ]
     )
 
-    return NextResponse.json(result.rows[0])
+    return ApiResponse.success(result.rows[0])
   } catch (error) {
     console.error('Database error:', error)
-    return NextResponse.json({ error: 'Falha ao criar profissão' }, { status: 500 })
+    if (error.code === '23505') { // Unique violation
+      return ApiResponse.conflict('Uma profissão com este nome já existe')
+    }
+    return ApiResponse.databaseError('Falha ao criar profissão')
   }
 }
+
+export const GET = generalApiRateLimit(handleGET)
+export const POST = generalApiRateLimit(handlePOST)

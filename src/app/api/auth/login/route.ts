@@ -1,12 +1,12 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { query } from '@/lib/database'
 import bcrypt from 'bcryptjs'
-import jwt from 'jsonwebtoken'
 import { LoginCredentials } from '@/types/user'
+import { generateToken, createAuthResponse } from '@/lib/auth'
+import { authRateLimit } from '@/lib/rate-limiter'
+import { log } from '@/lib/logger'
 
-const JWT_SECRET = process.env.JWT_SECRET || 'galaxia-secret-key'
-
-export async function POST(request: Request) {
+async function handlePOST(request: NextRequest) {
   try {
     const credentials: LoginCredentials = await request.json()
     
@@ -29,6 +29,7 @@ export async function POST(request: Request) {
     )
 
     if (userResult.rows.length === 0) {
+      log.authFailure(credentials.email, 'user_not_found')
       return NextResponse.json(
         { error: 'Email ou senha incorretos' },
         { status: 401 }
@@ -49,6 +50,7 @@ export async function POST(request: Request) {
     const passwordMatch = await bcrypt.compare(credentials.password, user.password_hash)
 
     if (!passwordMatch) {
+      log.authFailure(credentials.email, 'invalid_password')
       return NextResponse.json(
         { error: 'Email ou senha incorretos' },
         { status: 401 }
@@ -88,50 +90,51 @@ export async function POST(request: Request) {
     const progress = progressResult.rows[0] || null
 
     // Gerar JWT token
-    const token = jwt.sign(
+    const token = generateToken(
       { 
         userId: user.id, 
         email: user.email,
         name: user.name
       },
-      JWT_SECRET,
-      { expiresIn: credentials.rememberMe ? '30d' : '7d' }
+      credentials.rememberMe ? '30d' : '7d'
     )
 
-    // Resposta de sucesso
-    return NextResponse.json({
-      success: true,
-      message: 'Login realizado com sucesso',
-      user: {
-        id: user.id,
-        email: user.email,
-        name: user.name,
-        avatar: user.avatar || profile.avatar,
-        isLoggedIn: true,
-        emailVerified: user.email_verified,
-        createdAt: user.created_at,
-        lastLogin: user.last_login,
-        profile: {
-          fullName: profile.full_name || user.name,
-          dateOfBirth: profile.date_of_birth,
-          education: {
-            currentLevel: profile.current_level,
-            status: profile.education_status
-          },
-          professional: {
-            status: profile.professional_status
-          }
+    const userData = {
+      id: user.id,
+      email: user.email,
+      name: user.name,
+      avatar: user.avatar || profile.avatar,
+      isLoggedIn: true,
+      emailVerified: user.email_verified,
+      createdAt: user.created_at,
+      lastLogin: user.last_login,
+      profile: {
+        fullName: profile.full_name || user.name,
+        dateOfBirth: profile.date_of_birth,
+        education: {
+          currentLevel: profile.current_level,
+          status: profile.education_status
+        },
+        professional: {
+          status: profile.professional_status
         }
       },
-      progress,
-      token
-    })
+      progress
+    }
+
+    // Log successful authentication
+    log.authSuccess(user.id, user.email)
+    
+    // Resposta de sucesso com cookie seguro
+    return createAuthResponse(userData, token)
 
   } catch (error) {
-    console.error('Erro no login:', error)
+    log.error('Erro no login', error)
     return NextResponse.json(
       { error: 'Erro interno do servidor' },
       { status: 500 }
     )
   }
 }
+
+export const POST = authRateLimit(handlePOST)

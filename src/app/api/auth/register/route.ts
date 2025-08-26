@@ -1,13 +1,13 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { query } from '@/lib/database'
 import bcrypt from 'bcryptjs'
 import jwt from 'jsonwebtoken'
 import { RegisterData } from '@/types/user'
 import { EmailService } from '@/lib/email-service'
+import { env } from '@/lib/env'
+import { authRateLimit } from '@/lib/rate-limiter'
 
-const JWT_SECRET = process.env.JWT_SECRET || 'galaxia-secret-key'
-
-export async function POST(request: Request) {
+async function handlePOST(request: NextRequest) {
   try {
     const data: RegisterData = await request.json()
     
@@ -123,7 +123,7 @@ export async function POST(request: Request) {
         email: newUser.email,
         name: newUser.name
       },
-      JWT_SECRET,
+      env.JWT_SECRET,
       { expiresIn: '7d' }
     )
 
@@ -159,3 +159,5 @@ export async function POST(request: Request) {
     )
   }
 }
+
+export const POST = authRateLimit(handlePOST)
