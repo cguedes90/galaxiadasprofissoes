@@ -285,6 +285,18 @@ export default function Galaxy() {
 
   const areas = Array.from(new Set(professions.map(p => p.area)))
 
+  // Filter professions based on search query and selected area
+  const filteredProfessions = professions.filter(profession => {
+    const matchesSearch = !searchQuery || 
+      profession.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      profession.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      profession.area.toLowerCase().includes(searchQuery.toLowerCase())
+    
+    const matchesArea = !selectedArea || profession.area === selectedArea
+    
+    return matchesSearch && matchesArea
+  })
+
   return (
     <div className="relative w-full h-screen overflow-hidden bg-gradient-to-br from-indigo-900 via-purple-900 to-pink-900">
       {/* Search Bar */}
@@ -427,7 +439,7 @@ export default function Galaxy() {
           ))}
 
           {/* Profession Stars */}
-          {professions.map((profession) => {
+          {filteredProfessions.map((profession) => {
             const isHighlighted = isProfessionHighlighted(profession.name)
             const compatibility = getProfessionCompatibility(profession.name)
             
@@ -442,8 +454,8 @@ export default function Galaxy() {
                   backgroundColor: profession.icon_color,
                   width: isHighlighted ? '28px' : '20px',
                   height: isHighlighted ? '28px' : '20px',
-                  left: `${profession.x_position + 50}%`,
-                  top: `${profession.y_position + 50}%`,
+                  left: `calc(50% + ${profession.x_position}px)`,
+                  top: `calc(50% + ${profession.y_position}px)`,
                   transform: 'translate(-50%, -50%)',
                   boxShadow: isHighlighted 
                     ? `0 0 30px ${profession.icon_color}, 0 0 60px ${profession.icon_color}80`

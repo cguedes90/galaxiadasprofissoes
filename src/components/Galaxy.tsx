@@ -129,6 +129,18 @@ export default function Galaxy() {
 
   const areas = Array.from(new Set(professions.map(p => p.area)))
 
+  // Filter professions based on search query and selected area
+  const filteredProfessions = professions.filter(profession => {
+    const matchesSearch = !searchQuery || 
+      profession.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      profession.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      profession.area.toLowerCase().includes(searchQuery.toLowerCase())
+    
+    const matchesArea = !selectedArea || profession.area === selectedArea
+    
+    return matchesSearch && matchesArea
+  })
+
   return (
     <div className="relative w-full h-screen overflow-hidden bg-gradient-to-br from-indigo-900 via-purple-900 to-pink-900">
       {/* Search Bar */}
@@ -178,16 +190,14 @@ export default function Galaxy() {
 
           {/* Profession Stars */}
           <AnimatePresence>
-            {professions.map((profession) => (
+            {filteredProfessions.map((profession) => (
               <motion.div
                 key={profession.id}
                 className="star"
                 initial={{ scale: 0, opacity: 0 }}
                 animate={{ 
                   scale: 1, 
-                  opacity: 1,
-                  x: profession.x_position,
-                  y: profession.y_position
+                  opacity: 1
                 }}
                 exit={{ scale: 0, opacity: 0 }}
                 whileHover={{ 
@@ -199,8 +209,9 @@ export default function Galaxy() {
                   backgroundColor: profession.icon_color,
                   width: '16px',
                   height: '16px',
-                  left: '50%',
-                  top: '50%',
+                  left: `calc(50% + ${profession.x_position}px)`,
+                  top: `calc(50% + ${profession.y_position}px)`,
+                  transform: 'translate(-50%, -50%)'
                 }}
               >
                 <div className="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-black bg-opacity-80 text-white text-xs px-2 py-1 rounded opacity-0 hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
