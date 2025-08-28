@@ -356,6 +356,7 @@ export default function AuthModal({ isOpen, onClose, onLogin, onRegister }: Auth
                 </label>
                 <input
                   type="date"
+                  required
                   value={registerForm.dateOfBirth ? registerForm.dateOfBirth.toISOString().split('T')[0] : ''}
                   onChange={(e) => {
                     if (e.target.value) {

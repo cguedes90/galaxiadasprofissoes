@@ -12,7 +12,7 @@ async function handlePOST(request: NextRequest) {
     const data: RegisterData = await request.json()
     
     // Validações básicas
-    if (!data.email || !data.password || !data.name) {
+    if (!data.email || !data.password || !data.name || !data.dateOfBirth) {
       return NextResponse.json(
         { error: 'Dados obrigatórios não fornecidos' },
         { status: 400 }
