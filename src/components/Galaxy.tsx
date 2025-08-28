@@ -127,6 +127,21 @@ export default function Galaxy() {
     setSelectedProfession(profession)
   }
 
+  const handleRelatedProfessionClick = (professionName: string) => {
+    // Find profession by name in the current professions list
+    const foundProfession = professions.find(p => 
+      p.name.toLowerCase().includes(professionName.toLowerCase()) ||
+      professionName.toLowerCase().includes(p.name.toLowerCase())
+    )
+    
+    if (foundProfession) {
+      setSelectedProfession(foundProfession)
+    } else {
+      // If not found, show an alert or could trigger a search
+      console.log(`Profissão "${professionName}" não encontrada na lista atual`)
+    }
+  }
+
   const areas = Array.from(new Set(professions.map(p => p.area)))
 
   // Filter professions based on search query and selected area
@@ -229,6 +244,7 @@ export default function Galaxy() {
           <ProfessionModal
             profession={selectedProfession}
             onClose={() => setSelectedProfession(null)}
+            onRelatedProfessionClick={handleRelatedProfessionClick}
           />
         )}
       </AnimatePresence>

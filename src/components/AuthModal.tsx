@@ -29,7 +29,7 @@ export default function AuthModal({ isOpen, onClose, onLogin, onRegister }: Auth
     password: '',
     confirmPassword: '',
     name: '',
-    dateOfBirth: new Date(),
+    dateOfBirth: null,
     education: {
       level: 'ensino_medio',
       status: 'concluido'
@@ -116,9 +116,13 @@ export default function AuthModal({ isOpen, onClose, onLogin, onRegister }: Auth
     setLoading(true)
     const newErrors: {[key: string]: string} = {}
 
-    const age = new Date().getFullYear() - registerForm.dateOfBirth.getFullYear()
-    if (age < 13) {
-      newErrors.dateOfBirth = 'Você deve ter pelo menos 13 anos'
+    if (!registerForm.dateOfBirth) {
+      newErrors.dateOfBirth = 'Data de nascimento é obrigatória'
+    } else {
+      const age = new Date().getFullYear() - registerForm.dateOfBirth.getFullYear()
+      if (age < 13) {
+        newErrors.dateOfBirth = 'Você deve ter pelo menos 13 anos'
+      }
     }
 
     if (!registerForm.agreeTerms) {
@@ -352,11 +356,24 @@ export default function AuthModal({ isOpen, onClose, onLogin, onRegister }: Auth
                 </label>
                 <input
                   type="date"
-                  value={registerForm.dateOfBirth.toISOString().split('T')[0]}
-                  onChange={(e) => setRegisterForm({ 
-                    ...registerForm, 
-                    dateOfBirth: new Date(e.target.value)
-                  })}
+                  value={registerForm.dateOfBirth ? registerForm.dateOfBirth.toISOString().split('T')[0] : ''}
+                  onChange={(e) => {
+                    if (e.target.value) {
+                      const dateValue = new Date(e.target.value)
+                      // Verificar se a data é válida
+                      if (!isNaN(dateValue.getTime())) {
+                        setRegisterForm({ 
+                          ...registerForm, 
+                          dateOfBirth: dateValue
+                        })
+                      }
+                    } else {
+                      setRegisterForm({ 
+                        ...registerForm, 
+                        dateOfBirth: null
+                      })
+                    }
+                  }}
                   className={`w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
                     errors.dateOfBirth ? 'border-red-500' : 'border-gray-300'
                   }`}

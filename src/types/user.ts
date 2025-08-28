@@ -190,7 +190,7 @@ export interface RegisterData {
   password: string
   confirmPassword: string
   name: string
-  dateOfBirth: Date
+  dateOfBirth: Date | null
   education: {
     level: EducationInfo['currentLevel']
     status: EducationInfo['status']
