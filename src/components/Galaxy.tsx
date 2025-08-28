@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { Profession } from '@/types/profession'
 import ProfessionModal from './ProfessionModal'
 import SearchBar from './SearchBar'
+import { fallbackProfessions } from '@/data/fallback-professions'
 
 export default function Galaxy() {
   const [professions, setProfessions] = useState<Profession[]>([])
@@ -25,17 +26,22 @@ export default function Galaxy() {
       if (selectedArea) params.append('area', selectedArea)
       
       const response = await fetch(`/api/professions?${params}`)
+      console.log('API Response status:', response.status)
       const result = await response.json()
+      console.log('API Response data:', result)
       
       if (result.success && Array.isArray(result.data)) {
+        console.log(`✅ Carregadas ${result.data.length} profissões`)
         setProfessions(result.data)
       } else {
-        console.error('Resposta da API inválida:', result)
-        setProfessions([])
+        console.error('❌ Resposta da API inválida:', result)
+        console.log('🔄 Usando profissões de fallback')
+        setProfessions(fallbackProfessions)
       }
     } catch (error) {
       console.error('Falha ao buscar profissões:', error)
-      setProfessions([])
+      console.log('🔄 Usando profissões de fallback')
+      setProfessions(fallbackProfessions as Profession[])
     }
   }, [searchQuery, selectedArea])
 

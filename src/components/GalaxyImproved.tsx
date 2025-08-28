@@ -12,6 +12,7 @@ import GamificationPanel from './GamificationPanel'
 import AuthModal from './AuthModal'
 import AdminPanel from './AdminPanel'
 import FreePlanLimitModal from './FreePlanLimitModal'
+import { fallbackProfessions } from '@/data/fallback-professions'
 import { useGamification } from '@/hooks/useGamification'
 import { useFreePlanLimit } from '@/hooks/useFreePlanLimit'
 
@@ -61,17 +62,22 @@ export default function Galaxy() {
       if (selectedArea) params.append('area', selectedArea)
       
       const response = await fetch(`/api/professions?${params}`)
+      console.log('API Response status:', response.status)
       const result = await response.json()
+      console.log('API Response data:', result)
       
       if (result.success && Array.isArray(result.data)) {
+        console.log(`✅ Carregadas ${result.data.length} profissões`)
         setProfessions(result.data)
       } else {
-        console.error('Resposta da API inválida:', result)
-        setProfessions([])
+        console.error('❌ Resposta da API inválida:', result)
+        console.log('🔄 Usando profissões de fallback')
+        setProfessions(fallbackProfessions)
       }
     } catch (error) {
       console.error('Falha ao buscar profissões:', error)
-      setProfessions([])
+      console.log('🔄 Usando profissões de fallback')
+      setProfessions(fallbackProfessions as Profession[])
     }
   }
 
