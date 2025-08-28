@@ -25,7 +25,7 @@ class InMemoryStore {
 
   cleanup(): void {
     const now = Date.now()
-    for (const [key, value] of this.store.entries()) {
+    for (const [key, value] of Array.from(this.store.entries())) {
       if (now > value.resetTime) {
         this.store.delete(key)
       }

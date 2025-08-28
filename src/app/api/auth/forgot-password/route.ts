@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import bcrypt from 'bcryptjs'
 import jwt from 'jsonwebtoken'
-import { query } from '@/lib/db'
+import { query } from '@/lib/database'
 import { EmailService } from '@/lib/email-service'
 
 if (!process.env.JWT_SECRET) {

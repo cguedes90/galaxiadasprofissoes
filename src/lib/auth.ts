@@ -1,4 +1,4 @@
-import jwt from 'jsonwebtoken'
+import jwt, { SignOptions } from 'jsonwebtoken'
 import { NextRequest, NextResponse } from 'next/server'
 import { env } from './env'
 
@@ -17,6 +17,9 @@ export class AuthenticationError extends Error {
 
 export function verifyToken(token: string): AuthenticatedUser {
   try {
+    if (!env.JWT_SECRET) {
+      throw new Error('JWT_SECRET is not defined')
+    }
     const decoded = jwt.verify(token, env.JWT_SECRET) as any
     
     if (!decoded.userId || !decoded.email || !decoded.name) {
@@ -94,7 +97,10 @@ export function generateToken(payload: {
   email: string
   name: string
 }, expiresIn: string = '7d'): string {
-  return jwt.sign(payload, env.JWT_SECRET, { expiresIn })
+  if (!env.JWT_SECRET) {
+    throw new Error('JWT_SECRET is not defined')
+  }
+  return jwt.sign(payload, env.JWT_SECRET, { expiresIn } as SignOptions)
 }
 
 export function createAuthResponse(user: any, token: string) {

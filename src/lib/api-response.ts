@@ -120,7 +120,7 @@ class ApiResponseBuilder {
   }
 }
 
-export { ApiResponseBuilder as ApiResponse }
+export { ApiResponseBuilder as ApiResponseHandler }
 
 // Common error codes
 export const ErrorCodes = {

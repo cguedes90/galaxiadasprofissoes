@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import bcrypt from 'bcryptjs'
 import jwt from 'jsonwebtoken'
-import { query } from '@/lib/db'
+import { query } from '@/lib/database'
 
 if (!process.env.JWT_SECRET) {
   throw new Error('JWT_SECRET environment variable is required')

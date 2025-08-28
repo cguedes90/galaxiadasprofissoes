@@ -1,6 +1,6 @@
 import { NextRequest } from 'next/server'
 import { query } from '@/lib/database'
-import { ApiResponse } from '@/lib/api-response'
+import { ApiResponseHandler as ApiResponse } from '@/lib/api-response'
 import { generalApiRateLimit } from '@/lib/rate-limiter'
 
 async function handleGET(request: NextRequest) {
@@ -82,7 +82,7 @@ async function handlePOST(request: NextRequest) {
     )
 
     return ApiResponse.success(result.rows[0])
-  } catch (error) {
+  } catch (error: any) {
     console.error('Database error:', error)
     if (error.code === '23505') { // Unique violation
       return ApiResponse.conflict('Uma profissão com este nome já existe')

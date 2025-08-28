@@ -270,7 +270,7 @@ export default function Galaxy() {
     return match ? match.compatibility : 0
   }
 
-  const areas = [...new Set(professions.map(p => p.area))]
+  const areas = Array.from(new Set(professions.map(p => p.area)))
 
   return (
     <div className="relative w-full h-screen overflow-hidden bg-gradient-to-br from-indigo-900 via-purple-900 to-pink-900">

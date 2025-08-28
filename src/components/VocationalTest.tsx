@@ -59,7 +59,11 @@ export default function VocationalTest({ onClose, onComplete }: VocationalTestPr
     const topCategories = sortedCategories.map(([category]) => category)
 
     // Mapear profissões compatíveis
-    const matchedProfessions = []
+    const matchedProfessions: {
+      profession: string
+      compatibility: number
+      reasons: string[]
+    }[] = []
     
     for (const [categoryKey, categoryData] of Object.entries(VOCATIONAL_CATEGORIES)) {
       const score = categoryScores[categoryKey]

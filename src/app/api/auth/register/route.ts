@@ -123,7 +123,7 @@ async function handlePOST(request: NextRequest) {
         email: newUser.email,
         name: newUser.name
       },
-      env.JWT_SECRET,
+      env.JWT_SECRET!,
       { expiresIn: '7d' }
     )
 
