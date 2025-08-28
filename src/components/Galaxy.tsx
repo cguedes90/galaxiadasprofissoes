@@ -25,10 +25,17 @@ export default function Galaxy() {
       if (selectedArea) params.append('area', selectedArea)
       
       const response = await fetch(`/api/professions?${params}`)
-      const data = await response.json()
-      setProfessions(data)
+      const result = await response.json()
+      
+      if (result.success && Array.isArray(result.data)) {
+        setProfessions(result.data)
+      } else {
+        console.error('Resposta da API inválida:', result)
+        setProfessions([])
+      }
     } catch (error) {
       console.error('Falha ao buscar profissões:', error)
+      setProfessions([])
     }
   }, [searchQuery, selectedArea])
 
