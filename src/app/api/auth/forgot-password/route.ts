@@ -4,13 +4,17 @@ import jwt from 'jsonwebtoken'
 import { query } from '@/lib/database'
 import { EmailService } from '@/lib/email-service'
 
-if (!process.env.JWT_SECRET) {
-  throw new Error('JWT_SECRET environment variable is required')
-}
 const JWT_SECRET = process.env.JWT_SECRET
 
 export async function POST(request: NextRequest) {
   try {
+    if (!JWT_SECRET) {
+      return NextResponse.json(
+        { error: 'Configuração do servidor incorreta' },
+        { status: 500 }
+      )
+    }
+
     const { email } = await request.json()
 
     if (!email) {

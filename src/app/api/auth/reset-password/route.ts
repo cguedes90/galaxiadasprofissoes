@@ -3,13 +3,17 @@ import bcrypt from 'bcryptjs'
 import jwt from 'jsonwebtoken'
 import { query } from '@/lib/database'
 
-if (!process.env.JWT_SECRET) {
-  throw new Error('JWT_SECRET environment variable is required')
-}
 const JWT_SECRET = process.env.JWT_SECRET
 
 export async function POST(request: NextRequest) {
   try {
+    if (!JWT_SECRET) {
+      return NextResponse.json(
+        { error: 'Configuração do servidor incorreta' },
+        { status: 500 }
+      )
+    }
+
     const { token, newPassword } = await request.json()
 
     if (!token || !newPassword) {
