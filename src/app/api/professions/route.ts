@@ -3,7 +3,7 @@ import { query } from '@/lib/database'
 import { ApiResponseHandler as ApiResponse } from '@/lib/api-response'
 // import { generalApiRateLimit } from '@/lib/rate-limiter' // Disabled to avoid Redis dependency
 // import { getCachedProfessions, getCachedSearchResults, invalidateProfessionCache, invalidateSearchCache } from '@/lib/cache-strategy' // Disabled to avoid Redis dependency
-import { log } from '@/lib/logger'
+// import { log } from '@/lib/logger' // Disabled to avoid any Redis dependency
 
 async function handleGET(request: NextRequest) {
   try {
@@ -14,10 +14,9 @@ async function handleGET(request: NextRequest) {
     const limit = Math.min(100, Math.max(1, parseInt(searchParams.get('limit') || '20')))
     const offset = (page - 1) * limit
 
-    log.apiRequest(request, 'GET /api/professions')
+    console.log('GET /api/professions', { search, area, page, limit })
 
-    // Skip cache in production to avoid Redis timeout issues
-    // Go directly to database for reliability
+    // Direct database query - no cache, no Redis dependencies
 
     // Fallback to database with filters and pagination
     let sql = 'SELECT * FROM professions'
@@ -46,7 +45,7 @@ async function handleGET(request: NextRequest) {
 
     const result = await query(sql, params)
     
-    log.info('Professions fetched from database', { 
+    console.log('Professions fetched from database', { 
       total, 
       returned: result.rows.length,
       page,
@@ -67,14 +66,14 @@ async function handleGET(request: NextRequest) {
       cached: false
     })
   } catch (error) {
-    log.error('Database error in GET /api/professions', error)
+    console.error('Database error in GET /api/professions', error)
     return ApiResponse.databaseError('Falha ao buscar profissões')
   }
 }
 
 async function handlePOST(request: NextRequest) {
   try {
-    log.apiRequest(request, 'POST /api/professions')
+    console.log('POST /api/professions')
     
     const body = await request.json()
     const {
@@ -121,7 +120,7 @@ async function handlePOST(request: NextRequest) {
     // await invalidateProfessionCache() 
     // await invalidateSearchCache()
 
-    log.info('New profession created and cache invalidated', { 
+    console.log('New profession created', { 
       professionId: newProfession.id,
       name: newProfession.name,
       area: newProfession.area
@@ -131,7 +130,7 @@ async function handlePOST(request: NextRequest) {
       message: 'Profissão criada com sucesso'
     })
   } catch (error: any) {
-    log.error('Database error in POST /api/professions', error)
+    console.error('Database error in POST /api/professions', error)
     
     if (error.code === '23505') { // Unique violation
       return ApiResponse.conflict('Uma profissão com este nome já existe')

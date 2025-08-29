@@ -44,6 +44,44 @@ export default function DebugPage() {
     setLoading(false)
   }
 
+  const testDirectProfessions = async () => {
+    setLoading(true)
+    setResults(null)
+    
+    try {
+      const response = await fetch('/api/professions-direct')
+      const data = await response.json()
+      setResults({ type: 'direct_professions', data, status: response.status })
+    } catch (error) {
+      setResults({ 
+        type: 'error', 
+        error: error instanceof Error ? error.message : String(error),
+        status: 'network_error'
+      })
+    }
+    
+    setLoading(false)
+  }
+
+  const testForceConnection = async () => {
+    setLoading(true)
+    setResults(null)
+    
+    try {
+      const response = await fetch('/api/debug/force-connection')
+      const data = await response.json()
+      setResults({ type: 'force_connection', data, status: response.status })
+    } catch (error) {
+      setResults({ 
+        type: 'error', 
+        error: error instanceof Error ? error.message : String(error),
+        status: 'network_error'
+      })
+    }
+    
+    setLoading(false)
+  }
+
   const initDatabase = async () => {
     setLoading(true)
     setResults(null)
@@ -86,11 +124,27 @@ export default function DebugPage() {
             </button>
             
             <button
-              onClick={testProfessions}
+              onClick={testForceConnection}
+              disabled={loading}
+              className="w-full bg-purple-500 text-white py-3 px-4 rounded-md hover:bg-purple-600 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {loading ? '⏳ Testando...' : '🔧 2. Testar Conexão Forçada (Bypass ENV)'}
+            </button>
+            
+            <button
+              onClick={testDirectProfessions}
               disabled={loading}
               className="w-full bg-green-500 text-white py-3 px-4 rounded-md hover:bg-green-600 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {loading ? '⏳ Testando...' : '📋 2. Testar API de Profissões'}
+              {loading ? '⏳ Testando...' : '📋 3. Testar API Profissões Direta'}
+            </button>
+
+            <button
+              onClick={testProfessions}
+              disabled={loading}
+              className="w-full bg-yellow-500 text-white py-3 px-4 rounded-md hover:bg-yellow-600 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {loading ? '⏳ Testando...' : '📋 4. Testar API Original (Com ENV)'}
             </button>
             
             <button
@@ -98,7 +152,7 @@ export default function DebugPage() {
               disabled={loading}
               className="w-full bg-orange-500 text-white py-3 px-4 rounded-md hover:bg-orange-600 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {loading ? '⏳ Inicializando...' : '🚀 3. Inicializar Banco (se necessário)'}
+              {loading ? '⏳ Inicializando...' : '🚀 5. Inicializar Banco (se necessário)'}
             </button>
           </div>
         </div>
@@ -136,10 +190,34 @@ export default function DebugPage() {
               </div>
             )}
             
+            {results.type === 'force_connection' && results.data?.success && (
+              <div className="mt-4 p-4 bg-purple-50 border border-purple-200 rounded-md">
+                <p className="text-purple-800">
+                  ✅ <strong>Conexão Forçada Funcionou!</strong> 
+                  {results.data.data?.professionCount && ` ${results.data.data.professionCount} profissões encontradas.`}
+                </p>
+                <p className="text-purple-600 text-sm mt-2">
+                  🔧 Problema confirmado: Variável DATABASE_URL no Vercel não está configurada corretamente.
+                </p>
+              </div>
+            )}
+
+            {results.type === 'direct_professions' && results.data?.success && (
+              <div className="mt-4 p-4 bg-green-50 border border-green-200 rounded-md">
+                <p className="text-green-800">
+                  ✅ <strong>API Direta Funcionando!</strong> 
+                  {results.data.data?.length && ` ${results.data.data.length} profissões encontradas.`}
+                </p>
+                <p className="text-green-600 text-sm mt-2">
+                  🚀 Use esta API temporariamente: <code>/api/professions-direct</code>
+                </p>
+              </div>
+            )}
+
             {results.type === 'professions' && results.data?.success && (
               <div className="mt-4 p-4 bg-green-50 border border-green-200 rounded-md">
                 <p className="text-green-800">
-                  ✅ <strong>API de Profissões Funcionando!</strong> 
+                  ✅ <strong>API Original Funcionando!</strong> 
                   {results.data.data?.length && ` ${results.data.data.length} profissões encontradas.`}
                 </p>
               </div>
@@ -158,11 +236,11 @@ export default function DebugPage() {
         <div className="mt-8 bg-yellow-50 border border-yellow-200 rounded-lg p-6">
           <h3 className="text-lg font-semibold text-yellow-800 mb-2">💡 Como Usar</h3>
           <ol className="list-decimal list-inside space-y-2 text-yellow-700">
-            <li><strong>Primeiro:</strong> Clique em "Testar Conexão com Neon" para verificar se consegue conectar no banco</li>
-            <li><strong>Se der erro:</strong> O problema é na connection string ou credenciais do Neon</li>
-            <li><strong>Se conectar mas não tiver tabelas:</strong> Clique em "Inicializar Banco"</li>
-            <li><strong>Depois:</strong> Teste a "API de Profissões" para ver se está funcionando</li>
-            <li><strong>Por fim:</strong> Volte para a galáxia e veja se as profissões aparecem</li>
+            <li><strong>Testar Conexão com Neon:</strong> Verifica se consegue conectar (deve funcionar)</li>
+            <li><strong>Testar Conexão Forçada:</strong> Usa connection string hardcoded (vai mostrar detalhes do problema ENV)</li>
+            <li><strong>Testar API Profissões Direta:</strong> API que funciona sem depender de variáveis de ambiente</li>
+            <li><strong>Testar API Original:</strong> API normal (provavelmente vai dar erro por causa da ENV)</li>
+            <li><strong>Solução:</strong> Configure DATABASE_URL no Vercel com o valor correto ou use a API direta temporariamente</li>
           </ol>
         </div>
       </div>
