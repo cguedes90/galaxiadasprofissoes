@@ -25,10 +25,13 @@ export default function Galaxy() {
       if (searchQuery) params.append('search', searchQuery)
       if (selectedArea) params.append('area', selectedArea)
       
+      console.log(`🚀 Tentando buscar profissões: /api/professions?${params}`)
       const response = await fetch(`/api/professions?${params}`)
-      console.log('API Response status:', response.status)
+      console.log('📊 API Response status:', response.status)
+      console.log('📊 API Response ok:', response.ok)
+      
       const result = await response.json()
-      console.log('API Response data:', result)
+      console.log('📊 API Response data:', result)
       
       if (result.success && Array.isArray(result.data)) {
         console.log(`✅ Carregadas ${result.data.length} profissões`)
