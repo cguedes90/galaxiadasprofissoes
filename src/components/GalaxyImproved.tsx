@@ -18,6 +18,7 @@ import { useFreePlanLimit } from '@/hooks/useFreePlanLimit'
 
 export default function Galaxy() {
   const [professions, setProfessions] = useState<Profession[]>([])
+  const [totalProfessions, setTotalProfessions] = useState<number>(0)
   const [selectedProfession, setSelectedProfession] = useState<Profession | null>(null)
   const [transform, setTransform] = useState({ x: 0, y: 0, scale: 1 })
   const [isDragging, setIsDragging] = useState(false)
@@ -61,6 +62,8 @@ export default function Galaxy() {
       if (searchQuery) params.append('search', searchQuery)
       if (selectedArea) params.append('area', selectedArea)
       
+      // Para a galáxia, queremos mostrar todas as profissões, não apenas uma página
+      params.append('limit', '100') // Buscar até 100 profissões para mostrar todas na galáxia
       const response = await fetch(`/api/professions?${params}`)
       console.log('API Response status:', response.status)
       const result = await response.json()
@@ -68,16 +71,30 @@ export default function Galaxy() {
       
       if (result.success && Array.isArray(result.data)) {
         console.log(`✅ Carregadas ${result.data.length} profissões`)
+        console.log('📊 Estrutura completa da resposta:', result)
         setProfessions(result.data)
+        // Pega o total do meta.pagination ou usa o tamanho do array como fallback
+        let totalFromAPI = 0
+        if (result.meta && result.meta.pagination && result.meta.pagination.total) {
+          totalFromAPI = result.meta.pagination.total
+        } else {
+          totalFromAPI = result.data.length
+        }
+        console.log(`🔢 Total de profissões: ${totalFromAPI}`)
+        console.log('🔍 Meta object:', result.meta)
+        console.log('🔍 Pagination object:', result.meta?.pagination)
+        setTotalProfessions(Number(totalFromAPI))
       } else {
         console.error('❌ Resposta da API inválida:', result)
         console.log('🔄 Usando profissões de fallback')
         setProfessions(fallbackProfessions)
+        setTotalProfessions(fallbackProfessions.length)
       }
     } catch (error) {
       console.error('Falha ao buscar profissões:', error)
       console.log('🔄 Usando profissões de fallback')
       setProfessions(fallbackProfessions as Profession[])
+      setTotalProfessions(fallbackProfessions.length)
     }
   }
 
@@ -609,19 +626,29 @@ export default function Galaxy() {
         )}
       </div>
 
-      {/* Result Summary */}
-      {vocationalResult && (
-        <div className="absolute bottom-4 right-4 text-white text-sm bg-black bg-opacity-50 p-3 rounded z-10">
-          <div className="font-semibold mb-2">✨ Profissões destacadas para você:</div>
-          <div className="text-xs">
-            {vocationalResult.matchedProfessions.slice(0, 3).map(match => (
-              <div key={match.profession} className="text-green-300">
-                • {match.profession} ({match.compatibility}%)
-              </div>
-            ))}
+      {/* Galaxy Stats in the bottom right */}
+      <div className="absolute bottom-4 right-4 text-white text-sm bg-black bg-opacity-50 p-3 rounded z-10 space-y-2">
+        {/* Total Professions Counter */}
+        <div className="text-center border-b border-gray-600 pb-2">
+          <div className="text-xs text-gray-300">
+            🌌 Galáxia com {totalProfessions || 0} profissões em constante expansão...
           </div>
         </div>
-      )}
+        
+        {/* Vocational Result Summary */}
+        {vocationalResult && (
+          <div>
+            <div className="font-semibold mb-2">✨ Profissões destacadas para você:</div>
+            <div className="text-xs">
+              {vocationalResult.matchedProfessions.slice(0, 3).map(match => (
+                <div key={match.profession} className="text-green-300">
+                  • {match.profession} ({match.compatibility}%)
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   )
 }

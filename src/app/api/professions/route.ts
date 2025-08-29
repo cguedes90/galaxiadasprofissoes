@@ -35,8 +35,15 @@ async function handleGET(request: NextRequest) {
     sql += ' ORDER BY created_at DESC'
 
     // Get total count for pagination
-    const countSql = sql.replace('SELECT *', 'SELECT COUNT(*)')
-    const countResult = await query(countSql, params)
+    let countSql = 'SELECT COUNT(*) FROM professions'
+    const countParams: any[] = []
+    
+    if (area) {
+      countSql += ' WHERE area = $1'
+      countParams.push(area)
+    }
+    
+    const countResult = await query(countSql, countParams)
     const total = parseInt(countResult.rows[0].count)
 
     // Apply pagination to main query
