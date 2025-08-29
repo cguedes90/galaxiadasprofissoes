@@ -26,7 +26,7 @@ try {
   }
 } catch (error) {
   // Fallback to console logging if pino fails
-  console.warn('Falling back to console logging due to pino error:', error.message)
+  console.warn('Falling back to console logging due to pino error:', error instanceof Error ? error.message : String(error))
 }
 
 // Safe logging functions that always work
