@@ -30,15 +30,19 @@ export class CacheStrategy {
       : `${this.CACHE_PREFIXES.PROFESSIONS}:all`
     
     try {
-      // Try to get from cache first
-      const cached = await redis.get(cacheKey)
-      if (cached) {
-        log.debug('Cache hit for professions', { cacheKey, source: 'redis' })
-        return JSON.parse(cached)
+      // Try to get from cache first (only if Redis is working)
+      try {
+        const cached = await redis.get(cacheKey)
+        if (cached) {
+          log.debug('Cache hit for professions', { cacheKey, source: 'redis' })
+          return JSON.parse(cached)
+        }
+      } catch (redisError) {
+        log.warn('Redis unavailable, skipping cache check', redisError)
       }
 
-      // Cache miss - fetch from database
-      log.debug('Cache miss for professions', { cacheKey })
+      // Cache miss or Redis unavailable - fetch from database
+      log.debug('Fetching professions from database', { cacheKey })
       
       let queryText = 'SELECT * FROM professions'
       const params: any[] = []
@@ -64,22 +68,27 @@ export class CacheStrategy {
       const result = await query(queryText, params)
       const professions = result.rows
 
-      // Cache for 1 minute (60 seconds)
-      await redis.setex(cacheKey, 60, JSON.stringify(professions))
-      
-      log.info('Professions cached successfully', { 
-        cacheKey, 
+      // Try to cache for 1 minute (only if Redis is working)
+      try {
+        await redis.setex(cacheKey, 60, JSON.stringify(professions))
+        log.debug('Professions cached successfully', { 
+          cacheKey, 
+          count: professions.length,
+          ttl: 60 
+        })
+      } catch (redisError) {
+        log.warn('Redis unavailable, skipping cache storage', redisError)
+      }
+
+      log.info('Professions fetched from database', { 
         count: professions.length,
-        ttl: 60 
+        cached: false 
       })
 
       return professions
     } catch (error) {
-      log.error('Cache error for professions', error)
-      
-      // Fallback to database without cache
-      const result = await query('SELECT * FROM professions ORDER BY created_at DESC')
-      return result.rows
+      log.error('Error fetching professions', error)
+      throw error
     }
   }
 
@@ -254,12 +263,18 @@ export class CacheStrategy {
     const cacheKey = `${this.CACHE_PREFIXES.SEARCH}:${searchQuery}:${JSON.stringify(filters || {})}`
     
     try {
-      const cached = await redis.get(cacheKey)
-      if (cached) {
-        log.debug('Cache hit for search results', { searchQuery })
-        return JSON.parse(cached)
+      // Try to get from cache first (only if Redis is working)
+      try {
+        const cached = await redis.get(cacheKey)
+        if (cached) {
+          log.debug('Cache hit for search results', { searchQuery })
+          return JSON.parse(cached)
+        }
+      } catch (redisError) {
+        log.warn('Redis unavailable for search cache, skipping cache check', redisError)
       }
 
+      // Cache miss or Redis unavailable - fetch from database
       let queryText = `
         SELECT *, 
                CASE 
@@ -285,18 +300,26 @@ export class CacheStrategy {
       const result = await query(queryText, params)
       const searchResults = result.rows
 
-      // Cache for 5 minutes
-      await redis.setex(cacheKey, 300, JSON.stringify(searchResults))
-      
-      log.info('Search results cached', { 
+      // Try to cache for 5 minutes (only if Redis is working)
+      try {
+        await redis.setex(cacheKey, 300, JSON.stringify(searchResults))
+        log.debug('Search results cached successfully', { 
+          searchQuery, 
+          resultCount: searchResults.length 
+        })
+      } catch (redisError) {
+        log.warn('Redis unavailable, skipping search cache storage', redisError)
+      }
+
+      log.info('Search results fetched from database', { 
         searchQuery, 
         resultCount: searchResults.length 
       })
 
       return searchResults
     } catch (error) {
-      log.error('Cache error for search results', error)
-      return []
+      log.error('Error fetching search results', error)
+      throw error
     }
   }
 

@@ -16,12 +16,38 @@ async function handleGET(request: NextRequest) {
 
     log.apiRequest(request, 'GET /api/professions')
 
+    // Try cache first, but fallback to database if cache fails
+    let professions: any[] = []
+    let fromCache = false
+
     // Use cache for search queries
     if (search) {
-      log.debug('Using search cache strategy', { search, area })
-      const professions = await getCachedSearchResults(search, { area })
-      
-      // Apply pagination to cached results
+      log.debug('Attempting search cache strategy', { search, area })
+      try {
+        professions = await getCachedSearchResults(search, { area })
+        fromCache = true
+        log.debug('Search cache hit', { count: professions.length })
+      } catch (cacheError) {
+        log.warn('Search cache failed, using direct database query', cacheError)
+        fromCache = false
+      }
+    }
+
+    // Use cache for simple profession listing
+    else if (!area && page === 1 && limit >= 20) {
+      log.debug('Attempting profession cache strategy')
+      try {
+        professions = await getCachedProfessions()
+        fromCache = true
+        log.debug('Profession cache hit', { count: professions.length })
+      } catch (cacheError) {
+        log.warn('Profession cache failed, using direct database query', cacheError)
+        fromCache = false
+      }
+    }
+
+    // If cache worked, return cached results
+    if (fromCache && professions.length > 0) {
       const paginatedResults = professions.slice(offset, offset + limit)
       
       return ApiResponse.success(paginatedResults, {
@@ -34,28 +60,6 @@ async function handleGET(request: NextRequest) {
           hasPrevious: page > 1
         },
         filters: { search, area },
-        cached: true
-      })
-    }
-
-    // Use cache for simple profession listing
-    if (!area && page === 1 && limit >= 20) {
-      log.debug('Using profession cache strategy')
-      const professions = await getCachedProfessions()
-      
-      // Apply pagination
-      const paginatedResults = professions.slice(offset, offset + limit)
-      
-      return ApiResponse.success(paginatedResults, {
-        pagination: {
-          page,
-          limit, 
-          total: professions.length,
-          totalPages: Math.ceil(professions.length / limit),
-          hasNext: page < Math.ceil(professions.length / limit),
-          hasPrevious: page > 1
-        },
-        filters: { area },
         cached: true
       })
     }
