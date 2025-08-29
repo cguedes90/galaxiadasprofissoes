@@ -16,7 +16,8 @@
       "Bash(npm run build:*)",
       "Bash(del test-database.js create-tables.js test-registration.js)",
       "Bash(rm:*)",
-      "WebSearch"
+      "WebSearch",
+      "WebFetch(domain:www.galaxiadasprofissoes.com.br)"
     ],
     "deny": [],
     "ask": []
