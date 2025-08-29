@@ -6,12 +6,12 @@ import { RegisterData } from '@/types/user'
 import { env } from '@/lib/env'
 // import { authRateLimit } from '@/lib/rate-limiter' // Disabled to avoid Redis dependency
 // import { addEmailJob, addAnalyticsJob } from '@/lib/queue-system' // Disabled to avoid Redis dependency
-import { log } from '@/lib/logger'
+// import { log } from '@/lib/logger' // Disabled to avoid worker issues
 // import { invalidateUserCache } from '@/lib/cache-strategy' // Disabled to avoid Redis dependency
 
 async function handlePOST(request: NextRequest) {
   try {
-    log.apiRequest(request, 'POST /api/auth/register')
+    console.log('POST /api/auth/register')
     const data: RegisterData = await request.json()
     
     // Validações básicas
@@ -131,7 +131,7 @@ async function handlePOST(request: NextRequest) {
     )
 
     // Background jobs temporarily disabled to avoid Redis dependency issues
-    log.info('User registered successfully - background jobs skipped', { 
+    console.log('User registered successfully - background jobs skipped', { 
       userId: newUser.id, 
       email: data.email 
     })
@@ -152,7 +152,7 @@ async function handlePOST(request: NextRequest) {
 
   } catch (error) {
     console.error('❌ Erro completo no registro:', error)
-    log.error('Registration error', error)
+    console.error('Registration error', error)
     
     // Provide more specific error information
     if (error instanceof Error) {
