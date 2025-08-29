@@ -3,8 +3,8 @@ import { query } from '@/lib/database'
 import bcrypt from 'bcryptjs'
 import { LoginCredentials } from '@/types/user'
 import { generateToken, createAuthResponse } from '@/lib/auth'
-import { authRateLimit } from '@/lib/rate-limiter'
-import { log } from '@/lib/logger'
+// import { authRateLimit } from '@/lib/rate-limiter' // Disabled to avoid Redis dependency
+// import { log } from '@/lib/logger' // Disabled to avoid worker issues
 
 async function handlePOST(request: NextRequest) {
   try {
@@ -29,7 +29,7 @@ async function handlePOST(request: NextRequest) {
     )
 
     if (userResult.rows.length === 0) {
-      log.authFailure(credentials.email, 'user_not_found')
+      console.log('User not found:', credentials.email)
       return NextResponse.json(
         { error: 'Email ou senha incorretos' },
         { status: 401 }
@@ -50,7 +50,7 @@ async function handlePOST(request: NextRequest) {
     const passwordMatch = await bcrypt.compare(credentials.password, user.password_hash)
 
     if (!passwordMatch) {
-      log.authFailure(credentials.email, 'invalid_password')
+      console.log('Password mismatch for user:', credentials.email)
       return NextResponse.json(
         { error: 'Email ou senha incorretos' },
         { status: 401 }
@@ -66,7 +66,7 @@ async function handlePOST(request: NextRequest) {
     // Buscar dados do perfil
     const profileResult = await query(
       `SELECT 
-        up.full_name, up.date_of_birth, up.avatar,
+        up.full_name, up.date_of_birth,
         ei.current_level, ei.status as education_status,
         pi.status as professional_status
        FROM user_profiles up
@@ -103,7 +103,7 @@ async function handlePOST(request: NextRequest) {
       id: user.id,
       email: user.email,
       name: user.name,
-      avatar: user.avatar || profile.avatar,
+      avatar: user.avatar || null,
       isLoggedIn: true,
       emailVerified: user.email_verified,
       createdAt: user.created_at,
@@ -123,13 +123,13 @@ async function handlePOST(request: NextRequest) {
     }
 
     // Log successful authentication
-    log.authSuccess(user.id, user.email)
+    console.log('Login successful for user:', user.email)
     
     // Resposta de sucesso com cookie seguro
     return createAuthResponse(userData, token)
 
   } catch (error) {
-    log.error('Erro no login', error)
+    console.error('Erro no login', error)
     return NextResponse.json(
       { error: 'Erro interno do servidor' },
       { status: 500 }
@@ -137,4 +137,4 @@ async function handlePOST(request: NextRequest) {
   }
 }
 
-export const POST = authRateLimit(handlePOST)
+export const POST = handlePOST // Removed rate limiting to avoid Redis dependency
