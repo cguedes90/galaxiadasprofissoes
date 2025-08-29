@@ -29,7 +29,9 @@ async function handleGET(request: NextRequest) {
           page,
           limit,
           total: professions.length,
-          totalPages: Math.ceil(professions.length / limit)
+          totalPages: Math.ceil(professions.length / limit),
+          hasNext: page < Math.ceil(professions.length / limit),
+          hasPrevious: page > 1
         },
         filters: { search, area },
         cached: true
@@ -49,7 +51,9 @@ async function handleGET(request: NextRequest) {
           page,
           limit, 
           total: professions.length,
-          totalPages: Math.ceil(professions.length / limit)
+          totalPages: Math.ceil(professions.length / limit),
+          hasNext: page < Math.ceil(professions.length / limit),
+          hasPrevious: page > 1
         },
         filters: { area },
         cached: true
@@ -96,7 +100,9 @@ async function handleGET(request: NextRequest) {
         page,
         limit,
         total,
-        totalPages: Math.ceil(total / limit)
+        totalPages: Math.ceil(total / limit),
+        hasNext: page < Math.ceil(total / limit),
+        hasPrevious: page > 1
       },
       filters: { area },
       cached: false

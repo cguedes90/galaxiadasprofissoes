@@ -22,7 +22,7 @@ async function handleGET(request: NextRequest) {
     })
   } catch (error) {
     log.error('Error fetching app stats', error)
-    return ApiResponse.internalServerError('Erro ao buscar estatísticas')
+    return ApiResponse.internalError('Erro ao buscar estatísticas')
   }
 }
 

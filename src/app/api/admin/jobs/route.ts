@@ -11,7 +11,7 @@ async function handleGET(request: NextRequest, user: any) {
     const stats = await getQueueStats()
     
     if (!stats) {
-      return ApiResponse.internalServerError('Erro ao obter estatísticas das filas')
+      return ApiResponse.internalError('Erro ao obter estatísticas das filas')
     }
 
     log.info('Job queue stats retrieved by admin', { 
@@ -25,7 +25,7 @@ async function handleGET(request: NextRequest, user: any) {
     })
   } catch (error) {
     log.error('Error fetching job queue stats', error)
-    return ApiResponse.internalServerError('Erro ao buscar estatísticas das filas')
+    return ApiResponse.internalError('Erro ao buscar estatísticas das filas')
   }
 }
 

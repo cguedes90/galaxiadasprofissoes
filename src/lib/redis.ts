@@ -13,7 +13,6 @@ class RedisClient {
       const redisUrl = process.env.REDIS_URL || 'redis://localhost:6379'
       
       this.client = new Redis(redisUrl, {
-        retryDelayOnFailover: 100,
         maxRetriesPerRequest: 3,
         lazyConnect: true,
       })
@@ -68,18 +67,6 @@ class RedisClient {
     }
   }
 
-  async del(key: string): Promise<boolean> {
-    try {
-      if (!this.client || !this.isConnected) {
-        await this.client?.connect()
-      }
-      await this.client!.del(key)
-      return true
-    } catch (error) {
-      console.error('❌ Redis DEL error:', error)
-      return false
-    }
-  }
 
   async exists(key: string): Promise<boolean> {
     try {
@@ -210,7 +197,7 @@ class RedisClient {
       if (!this.client || !this.isConnected) {
         await this.client?.connect()
       }
-      return await this.client!.info(section)
+      return section ? await this.client!.info(section) : await this.client!.info()
     } catch (error) {
       console.error('❌ Redis INFO error:', error)
       return ''
@@ -281,7 +268,7 @@ class RedisClient {
   }
 
   // Connection status
-  isConnected(): boolean {
+  getConnectionStatus(): boolean {
     return this.isConnected
   }
 
@@ -296,6 +283,68 @@ class RedisClient {
     } catch (error) {
       console.error('❌ Redis PING error:', error)
       return false
+    }
+  }
+
+  // Queue operations
+  async lpush(key: string, ...values: string[]): Promise<number> {
+    try {
+      if (!this.client || !this.isConnected) {
+        await this.client?.connect()
+      }
+      return await this.client!.lpush(key, ...values)
+    } catch (error) {
+      console.error('❌ Redis LPUSH error:', error)
+      return 0
+    }
+  }
+
+  async brpop(key: string, timeout: number): Promise<[string, string] | null> {
+    try {
+      if (!this.client || !this.isConnected) {
+        await this.client?.connect()
+      }
+      return await this.client!.brpop(key, timeout)
+    } catch (error) {
+      console.error('❌ Redis BRPOP error:', error)
+      return null
+    }
+  }
+
+  async zadd(key: string, score: number, member: string): Promise<number> {
+    try {
+      if (!this.client || !this.isConnected) {
+        await this.client?.connect()
+      }
+      return await this.client!.zadd(key, score, member)
+    } catch (error) {
+      console.error('❌ Redis ZADD error:', error)
+      return 0
+    }
+  }
+
+  async zrangebyscore(key: string, min: number | string, max: number | string, ...args: (string | number)[]): Promise<string[]> {
+    try {
+      if (!this.client || !this.isConnected) {
+        await this.client?.connect()
+      }
+      // Cast arguments to expected types for ioredis
+      return await (this.client!.zrangebyscore as any)(key, min, max, ...args)
+    } catch (error) {
+      console.error('❌ Redis ZRANGEBYSCORE error:', error)
+      return []
+    }
+  }
+
+  async zrem(key: string, ...members: string[]): Promise<number> {
+    try {
+      if (!this.client || !this.isConnected) {
+        await this.client?.connect()
+      }
+      return await this.client!.zrem(key, ...members)
+    } catch (error) {
+      console.error('❌ Redis ZREM error:', error)
+      return 0
     }
   }
 }

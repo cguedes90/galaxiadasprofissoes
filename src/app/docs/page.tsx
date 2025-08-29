@@ -102,7 +102,7 @@ export default function ApiDocsPage() {
         {spec && (
           <SwaggerUI 
             spec={spec} 
-            docExpansion="tag"
+            docExpansion="list"
             defaultModelsExpandDepth={2}
             tryItOutEnabled={true}
             filter={true}

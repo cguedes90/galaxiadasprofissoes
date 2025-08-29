@@ -39,7 +39,7 @@ export function usePageTracking() {
     
     // Rastrear visualização da página
     analytics.trackPageView(pageName, {
-      page_path: pathname,
+      page_name: pathname,
     })
   }, [pathname, analytics])
 }

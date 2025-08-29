@@ -9,7 +9,7 @@ const pool = new Pool({
   min: 2, // Minimum number of connections in pool
   idleTimeoutMillis: 30000, // Close idle connections after 30 seconds
   connectionTimeoutMillis: 5000, // Return error after 5 seconds if connection cannot be established
-  acquireTimeoutMillis: 60000, // Return error after 60 seconds if connection cannot be acquired from pool
+  // acquireTimeoutMillis: 60000, // Property doesn't exist in this version
   
   // Reconnection settings
   allowExitOnIdle: false, // Keep process alive even if all connections are idle

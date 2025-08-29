@@ -41,6 +41,15 @@ export interface EventProperties {
   device_type?: 'mobile' | 'tablet' | 'desktop'
   browser?: string
   referrer?: string
+  timestamp?: string
+  user_id?: string
+  
+  // Propriedades de erro
+  error_name?: string
+  error_message?: string
+  
+  // Propriedades extras
+  [key: string]: any
 }
 
 class AnalyticsService {

@@ -152,9 +152,16 @@ export class ErrorReporter {
    * Reporta métricas customizadas
    */
   static reportMetric(name: string, value: number, tags?: Record<string, string>) {
-    Sentry.metrics.gauge(name, value, {
-      tags,
-    })
+    // Note: metrics API may not be available in all Sentry versions
+    try {
+      // @ts-ignore - metrics API might not be in types
+      const sentryWithMetrics = Sentry as any
+      if (sentryWithMetrics.metrics?.gauge) {
+        sentryWithMetrics.metrics.gauge(name, value, { tags })
+      }
+    } catch (error) {
+      console.warn('Sentry metrics not available:', error)
+    }
   }
 
   /**
@@ -186,10 +193,16 @@ export class ErrorReporter {
    * Inicia uma transação para monitoramento de performance
    */
   static startTransaction(name: string, op: string) {
-    return Sentry.startTransaction({
-      name,
-      op,
-    })
+    try {
+      // @ts-ignore - startTransaction API might not be in types
+      const sentryWithTransactions = Sentry as any
+      if (sentryWithTransactions.startTransaction) {
+        return sentryWithTransactions.startTransaction({ name, op })
+      }
+    } catch (error) {
+      console.warn('Sentry transactions not available:', error)
+    }
+    return null
   }
 
   /**

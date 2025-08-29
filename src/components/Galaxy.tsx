@@ -249,12 +249,53 @@ export default function Galaxy() {
         )}
       </AnimatePresence>
 
-      {/* Instructions */}
-      <div className="absolute bottom-4 left-4 text-white text-sm bg-black bg-opacity-50 p-3 rounded">
-        <div>🖱️ Arraste para navegar</div>
-        <div>🔍 Use a roda do mouse para zoom</div>
-        <div>⭐ Clique nas estrelas para ver detalhes</div>
+      {/* Galaxy Stats & Legend */}
+      <div className="absolute bottom-4 left-4 text-white text-sm bg-black bg-opacity-50 p-3 rounded space-y-2">
+        <div className="flex items-center space-x-2">
+          <div className="w-2 h-2 bg-gradient-to-r from-blue-400 to-purple-500 rounded-full animate-pulse"></div>
+          <span className="font-semibold">
+            {filteredProfessions.length} profissões em nossa galáxia
+          </span>
+        </div>
+        <div className="text-xs text-gray-300">
+          🌌 Galáxia em constante crescimento...
+        </div>
+        <div className="border-t border-gray-600 pt-2 mt-2">
+          <div>🖱️ Arraste para navegar</div>
+          <div>🔍 Use a roda do mouse para zoom</div>
+          <div>⭐ Clique nas estrelas para ver detalhes</div>
+        </div>
       </div>
+
+      {/* Areas Legend */}
+      {filteredProfessions.length > 0 && (
+        <div className="absolute bottom-4 right-4 text-white text-sm bg-black bg-opacity-50 p-3 rounded max-w-xs">
+          <div className="font-semibold mb-2 flex items-center">
+            <div className="w-2 h-2 bg-yellow-400 rounded-full mr-2"></div>
+            Áreas Disponíveis
+          </div>
+          <div className="grid grid-cols-2 gap-1 text-xs">
+            {Array.from(new Set(filteredProfessions.map(p => p.area)))
+              .sort()
+              .map(area => {
+                const count = filteredProfessions.filter(p => p.area === area).length
+                const areaColor = filteredProfessions.find(p => p.area === area)?.icon_color || '#ffffff'
+                return (
+                  <div key={area} className="flex items-center space-x-1">
+                    <div 
+                      className="w-2 h-2 rounded-full" 
+                      style={{ backgroundColor: areaColor }}
+                    ></div>
+                    <span className="truncate" title={area}>
+                      {area} ({count})
+                    </span>
+                  </div>
+                )
+              })
+            }
+          </div>
+        </div>
+      )}
     </div>
   )
 }
