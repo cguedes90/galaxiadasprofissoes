@@ -4,15 +4,19 @@ import { log } from './logger'
 
 const pool = new Pool({
   connectionString: env.DATABASE_URL,
-  // Connection pool optimization
-  max: 20, // Maximum number of connections in pool
-  min: 2, // Minimum number of connections in pool
-  idleTimeoutMillis: 30000, // Close idle connections after 30 seconds
-  connectionTimeoutMillis: 5000, // Return error after 5 seconds if connection cannot be established
-  // acquireTimeoutMillis: 60000, // Property doesn't exist in this version
+  // Simplified connection settings for Neon compatibility
+  max: 10, // Reduce max connections for Neon
+  min: 0, // Allow zero idle connections
+  idleTimeoutMillis: 10000, // Shorter idle timeout
+  connectionTimeoutMillis: 10000, // Longer connection timeout for Neon
+  
+  // SSL settings for Neon
+  ssl: {
+    rejectUnauthorized: false
+  },
   
   // Reconnection settings
-  allowExitOnIdle: false, // Keep process alive even if all connections are idle
+  allowExitOnIdle: false,
 })
 
 export async function query(text: string, params?: any[]) {
