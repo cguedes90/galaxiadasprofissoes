@@ -2,21 +2,64 @@ import { NextRequest } from 'next/server'
 import { query } from '@/lib/database'
 import { ApiResponseHandler as ApiResponse } from '@/lib/api-response'
 import { generalApiRateLimit } from '@/lib/rate-limiter'
+import { getCachedProfessions, getCachedSearchResults, invalidateProfessionCache, invalidateSearchCache } from '@/lib/cache-strategy'
+import { log } from '@/lib/logger'
 
 async function handleGET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
-    const search = searchParams.get('search')
-    const area = searchParams.get('area')
+    const search = searchParams.get('search')?.trim()
+    const area = searchParams.get('area')?.trim()
+    const page = Math.max(1, parseInt(searchParams.get('page') || '1'))
+    const limit = Math.min(100, Math.max(1, parseInt(searchParams.get('limit') || '20')))
+    const offset = (page - 1) * limit
 
+    log.apiRequest(request, 'GET /api/professions')
+
+    // Use cache for search queries
+    if (search) {
+      log.debug('Using search cache strategy', { search, area })
+      const professions = await getCachedSearchResults(search, { area })
+      
+      // Apply pagination to cached results
+      const paginatedResults = professions.slice(offset, offset + limit)
+      
+      return ApiResponse.success(paginatedResults, {
+        pagination: {
+          page,
+          limit,
+          total: professions.length,
+          totalPages: Math.ceil(professions.length / limit)
+        },
+        filters: { search, area },
+        cached: true
+      })
+    }
+
+    // Use cache for simple profession listing
+    if (!area && page === 1 && limit >= 20) {
+      log.debug('Using profession cache strategy')
+      const professions = await getCachedProfessions()
+      
+      // Apply pagination
+      const paginatedResults = professions.slice(offset, offset + limit)
+      
+      return ApiResponse.success(paginatedResults, {
+        pagination: {
+          page,
+          limit, 
+          total: professions.length,
+          totalPages: Math.ceil(professions.length / limit)
+        },
+        filters: { area },
+        cached: true
+      })
+    }
+
+    // Fallback to database with filters and pagination
     let sql = 'SELECT * FROM professions'
     const params: any[] = []
     const conditions: string[] = []
-
-    if (search) {
-      conditions.push('name ILIKE $' + (params.length + 1))
-      params.push(`%${search}%`)
-    }
 
     if (area) {
       conditions.push('area = $' + (params.length + 1))
@@ -27,21 +70,47 @@ async function handleGET(request: NextRequest) {
       sql += ' WHERE ' + conditions.join(' AND ')
     }
 
-    sql += ' ORDER BY name'
+    sql += ' ORDER BY created_at DESC'
+
+    // Get total count for pagination
+    const countSql = sql.replace('SELECT *', 'SELECT COUNT(*)')
+    const countResult = await query(countSql, params)
+    const total = parseInt(countResult.rows[0].count)
+
+    // Apply pagination to main query
+    sql += ` LIMIT $${params.length + 1} OFFSET $${params.length + 2}`
+    params.push(limit, offset)
 
     const result = await query(sql, params)
+    
+    log.info('Professions fetched from database', { 
+      total, 
+      returned: result.rows.length,
+      page,
+      limit,
+      filters: { area }
+    })
+
     return ApiResponse.success(result.rows, {
-      total: result.rows.length,
-      filters: { search, area }
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit)
+      },
+      filters: { area },
+      cached: false
     })
   } catch (error) {
-    console.error('Database error:', error)
+    log.error('Database error in GET /api/professions', error)
     return ApiResponse.databaseError('Falha ao buscar profissões')
   }
 }
 
 async function handlePOST(request: NextRequest) {
   try {
+    log.apiRequest(request, 'POST /api/professions')
+    
     const body = await request.json()
     const {
       name,
@@ -81,9 +150,26 @@ async function handlePOST(request: NextRequest) {
       ]
     )
 
-    return ApiResponse.success(result.rows[0])
+    const newProfession = result.rows[0]
+    
+    // Invalidate relevant caches after creating a new profession
+    await Promise.all([
+      invalidateProfessionCache(), // Clear profession listings
+      invalidateSearchCache()      // Clear search results
+    ])
+
+    log.info('New profession created and cache invalidated', { 
+      professionId: newProfession.id,
+      name: newProfession.name,
+      area: newProfession.area
+    })
+
+    return ApiResponse.success(newProfession, {
+      message: 'Profissão criada com sucesso'
+    })
   } catch (error: any) {
-    console.error('Database error:', error)
+    log.error('Database error in POST /api/professions', error)
+    
     if (error.code === '23505') { // Unique violation
       return ApiResponse.conflict('Uma profissão com este nome já existe')
     }

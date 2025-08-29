@@ -2,12 +2,14 @@ import { NextRequest, NextResponse } from 'next/server'
 import bcrypt from 'bcryptjs'
 import jwt from 'jsonwebtoken'
 import { query } from '@/lib/database'
-import { EmailService } from '@/lib/email-service'
+import { addEmailJob } from '@/lib/queue-system'
+import { log } from '@/lib/logger'
 
 const JWT_SECRET = process.env.JWT_SECRET
 
 export async function POST(request: NextRequest) {
   try {
+    log.apiRequest(request, 'POST /api/auth/forgot-password')
     if (!JWT_SECRET) {
       return NextResponse.json(
         { error: 'Configuração do servidor incorreta' },
@@ -59,23 +61,31 @@ export async function POST(request: NextRequest) {
       [resetToken, new Date(Date.now() + 60 * 60 * 1000), user.id] // 1 hora a partir de agora
     )
 
-    // Enviar email de reset
-    const appUrl = process.env.NEXTAUTH_URL || 'http://localhost:3000'
-    const emailSent = await EmailService.sendPasswordResetEmail(
-      user.email,
-      user.name,
-      resetToken,
-      appUrl
-    )
+    // Enfileirar job para enviar email de reset
+    try {
+      const appUrl = `${request.headers.get('origin') || 'http://localhost:3000'}`
+      
+      await addEmailJob({
+        type: 'reset',
+        email: user.email,
+        userName: user.name,
+        resetToken,
+        appUrl
+      }, 'high') // Alta prioridade para reset de senha
 
-    if (emailSent) {
+      log.info('Password reset email job queued', { 
+        userId: user.id, 
+        email: user.email 
+      })
+
       return NextResponse.json({
         message: 'Link de redefinição de senha enviado para seu email.',
         success: true
       })
-    } else {
+    } catch (jobError) {
+      log.error('Failed to queue password reset email job', jobError)
       return NextResponse.json(
-        { error: 'Erro ao enviar email de redefinição. Tente novamente.' },
+        { error: 'Erro ao processar solicitação. Tente novamente.' },
         { status: 500 }
       )
     }

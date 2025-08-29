@@ -209,58 +209,87 @@ export class EmailService {
 
   private static async sendEmail(options: { to: string; subject: string; html: string }): Promise<boolean> {
     try {
-      // Implementação com fetch para API de email
-      const emailApiKey = process.env.EMAIL_API_KEY
-      const emailFrom = process.env.EMAIL_FROM
+      const emailProvider = process.env.EMAIL_PROVIDER || 'sendgrid'
       
-      if (!emailApiKey || !emailFrom) {
-        console.error('❌ Configurações de email não encontradas no .env')
-        return false
+      switch (emailProvider.toLowerCase()) {
+        case 'sendgrid':
+          return await this.sendEmailWithSendGrid(options)
+        case 'nodemailer':
+          return await this.sendEmailWithNodemailer(options)
+        default:
+          console.warn('⚠️ Provedor de email não configurado, simulando envio')
+          return await this.simulateEmailSend(options)
       }
-
-      // Log dos parâmetros para debug
-      console.log('📧 Enviando email:')
-      console.log('De:', emailFrom)
-      console.log('Para:', options.to)
-      console.log('Assunto:', options.subject)
-      console.log('API Key:', emailApiKey ? '***' + emailApiKey.slice(-4) : 'não configurada')
-      
-      // TODO: Substituir por chamada real da API do provedor de email
-      // Por enquanto, simular envio bem-sucedido
-      console.log('✅ Email simulado como enviado com sucesso')
-      return true
-      
-      /* Exemplo de integração real com SendGrid:
-      const response = await fetch('https://api.sendgrid.com/v3/mail/send', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${emailApiKey}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          personalizations: [{
-            to: [{ email: options.to }],
-            subject: options.subject
-          }],
-          from: { email: emailFrom },
-          content: [{
-            type: 'text/html',
-            value: options.html
-          }]
-        })
-      })
-      
-      if (response.ok) {
-        console.log('✅ Email enviado com sucesso via SendGrid')
-        return true
-      } else {
-        console.error('❌ Erro no envio via SendGrid:', await response.text())
-        return false
-      }
-      */
     } catch (error) {
       console.error('Erro na função sendEmail:', error)
       return false
     }
+  }
+
+  private static async sendEmailWithSendGrid(options: { to: string; subject: string; html: string }): Promise<boolean> {
+    try {
+      const sgMail = require('@sendgrid/mail')
+      const emailApiKey = process.env.SENDGRID_API_KEY
+      const emailFrom = process.env.EMAIL_FROM
+      
+      if (!emailApiKey || !emailFrom) {
+        console.error('❌ Configurações do SendGrid não encontradas no .env')
+        return false
+      }
+
+      sgMail.setApiKey(emailApiKey)
+
+      const msg = {
+        to: options.to,
+        from: emailFrom,
+        subject: options.subject,
+        html: options.html,
+      }
+
+      await sgMail.send(msg)
+      console.log('✅ Email enviado com sucesso via SendGrid')
+      return true
+    } catch (error) {
+      console.error('❌ Erro no envio via SendGrid:', error)
+      return false
+    }
+  }
+
+  private static async sendEmailWithNodemailer(options: { to: string; subject: string; html: string }): Promise<boolean> {
+    try {
+      const nodemailer = require('nodemailer')
+      
+      const transporter = nodemailer.createTransporter({
+        host: process.env.SMTP_HOST,
+        port: parseInt(process.env.SMTP_PORT || '587'),
+        secure: process.env.SMTP_SECURE === 'true',
+        auth: {
+          user: process.env.SMTP_USER,
+          pass: process.env.SMTP_PASS,
+        },
+      })
+
+      const mailOptions = {
+        from: process.env.EMAIL_FROM,
+        to: options.to,
+        subject: options.subject,
+        html: options.html,
+      }
+
+      await transporter.sendMail(mailOptions)
+      console.log('✅ Email enviado com sucesso via Nodemailer')
+      return true
+    } catch (error) {
+      console.error('❌ Erro no envio via Nodemailer:', error)
+      return false
+    }
+  }
+
+  private static async simulateEmailSend(options: { to: string; subject: string; html: string }): Promise<boolean> {
+    console.log('📧 Simulando envio de email:')
+    console.log('Para:', options.to)
+    console.log('Assunto:', options.subject)
+    console.log('✅ Email simulado como enviado com sucesso')
+    return true
   }
 }

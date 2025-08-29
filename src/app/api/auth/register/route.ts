@@ -3,12 +3,15 @@ import { query } from '@/lib/database'
 import bcrypt from 'bcryptjs'
 import jwt from 'jsonwebtoken'
 import { RegisterData } from '@/types/user'
-import { EmailService } from '@/lib/email-service'
 import { env } from '@/lib/env'
 import { authRateLimit } from '@/lib/rate-limiter'
+import { addEmailJob, addAnalyticsJob } from '@/lib/queue-system'
+import { log } from '@/lib/logger'
+import { invalidateUserCache } from '@/lib/cache-strategy'
 
 async function handlePOST(request: NextRequest) {
   try {
+    log.apiRequest(request, 'POST /api/auth/register')
     const data: RegisterData = await request.json()
     
     // Validações básicas
@@ -127,14 +130,38 @@ async function handlePOST(request: NextRequest) {
       { expiresIn: '7d' }
     )
 
-    // Enviar email de boas-vindas
+    // Enfileirar jobs em background
     try {
       const appUrl = `${request.headers.get('origin') || 'http://localhost:3000'}`
-      await EmailService.sendWelcomeEmail(data, appUrl)
-      console.log('✅ Email de boas-vindas enviado para:', data.email)
-    } catch (emailError) {
-      console.error('❌ Erro ao enviar email de boas-vindas:', emailError)
-      // Não falha o registro se o email não for enviado
+      
+      // Job para enviar email de boas-vindas (alta prioridade)
+      await addEmailJob({
+        type: 'welcome',
+        email: data.email,
+        userName: data.name,
+        userData: data,
+        appUrl
+      }, 'high')
+
+      // Job para analytics (baixa prioridade)
+      await addAnalyticsJob({
+        eventName: 'User Registered',
+        userId: newUser.id,
+        properties: {
+          email: data.email,
+          name: data.name,
+          educationLevel: data.education.level,
+          registrationMethod: 'form'
+        }
+      }, 'low')
+
+      log.info('Background jobs queued for new user', { 
+        userId: newUser.id, 
+        email: data.email 
+      })
+    } catch (jobError) {
+      log.error('Failed to queue background jobs', jobError)
+      // Continue sem falhar o registro
     }
 
     // Resposta de sucesso (sem enviar a senha)
