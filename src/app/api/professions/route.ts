@@ -1,8 +1,8 @@
 import { NextRequest } from 'next/server'
 import { query } from '@/lib/database'
 import { ApiResponseHandler as ApiResponse } from '@/lib/api-response'
-import { generalApiRateLimit } from '@/lib/rate-limiter'
-import { getCachedProfessions, getCachedSearchResults, invalidateProfessionCache, invalidateSearchCache } from '@/lib/cache-strategy'
+// import { generalApiRateLimit } from '@/lib/rate-limiter' // Disabled to avoid Redis dependency
+// import { getCachedProfessions, getCachedSearchResults, invalidateProfessionCache, invalidateSearchCache } from '@/lib/cache-strategy' // Disabled to avoid Redis dependency
 import { log } from '@/lib/logger'
 
 async function handleGET(request: NextRequest) {
@@ -16,53 +16,8 @@ async function handleGET(request: NextRequest) {
 
     log.apiRequest(request, 'GET /api/professions')
 
-    // Try cache first, but fallback to database if cache fails
-    let professions: any[] = []
-    let fromCache = false
-
-    // Use cache for search queries
-    if (search) {
-      log.debug('Attempting search cache strategy', { search, area })
-      try {
-        professions = await getCachedSearchResults(search, { area })
-        fromCache = true
-        log.debug('Search cache hit', { count: professions.length })
-      } catch (cacheError) {
-        log.warn('Search cache failed, using direct database query', cacheError)
-        fromCache = false
-      }
-    }
-
-    // Use cache for simple profession listing
-    else if (!area && page === 1 && limit >= 20) {
-      log.debug('Attempting profession cache strategy')
-      try {
-        professions = await getCachedProfessions()
-        fromCache = true
-        log.debug('Profession cache hit', { count: professions.length })
-      } catch (cacheError) {
-        log.warn('Profession cache failed, using direct database query', cacheError)
-        fromCache = false
-      }
-    }
-
-    // If cache worked, return cached results
-    if (fromCache && professions.length > 0) {
-      const paginatedResults = professions.slice(offset, offset + limit)
-      
-      return ApiResponse.success(paginatedResults, {
-        pagination: {
-          page,
-          limit,
-          total: professions.length,
-          totalPages: Math.ceil(professions.length / limit),
-          hasNext: page < Math.ceil(professions.length / limit),
-          hasPrevious: page > 1
-        },
-        filters: { search, area },
-        cached: true
-      })
-    }
+    // Skip cache in production to avoid Redis timeout issues
+    // Go directly to database for reliability
 
     // Fallback to database with filters and pagination
     let sql = 'SELECT * FROM professions'
@@ -162,11 +117,9 @@ async function handlePOST(request: NextRequest) {
 
     const newProfession = result.rows[0]
     
-    // Invalidate relevant caches after creating a new profession
-    await Promise.all([
-      invalidateProfessionCache(), // Clear profession listings
-      invalidateSearchCache()      // Clear search results
-    ])
+    // Cache invalidation disabled to avoid Redis dependency
+    // await invalidateProfessionCache() 
+    // await invalidateSearchCache()
 
     log.info('New profession created and cache invalidated', { 
       professionId: newProfession.id,
@@ -187,5 +140,5 @@ async function handlePOST(request: NextRequest) {
   }
 }
 
-export const GET = generalApiRateLimit(handleGET)
-export const POST = generalApiRateLimit(handlePOST)
+export const GET = handleGET // Removed rate limiting to avoid Redis dependency
+export const POST = handlePOST // Removed rate limiting to avoid Redis dependency

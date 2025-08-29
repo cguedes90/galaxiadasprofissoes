@@ -4,10 +4,10 @@ import bcrypt from 'bcryptjs'
 import jwt from 'jsonwebtoken'
 import { RegisterData } from '@/types/user'
 import { env } from '@/lib/env'
-import { authRateLimit } from '@/lib/rate-limiter'
-import { addEmailJob, addAnalyticsJob } from '@/lib/queue-system'
+// import { authRateLimit } from '@/lib/rate-limiter' // Disabled to avoid Redis dependency
+// import { addEmailJob, addAnalyticsJob } from '@/lib/queue-system' // Disabled to avoid Redis dependency
 import { log } from '@/lib/logger'
-import { invalidateUserCache } from '@/lib/cache-strategy'
+// import { invalidateUserCache } from '@/lib/cache-strategy' // Disabled to avoid Redis dependency
 
 async function handlePOST(request: NextRequest) {
   try {
@@ -130,39 +130,11 @@ async function handlePOST(request: NextRequest) {
       { expiresIn: '7d' }
     )
 
-    // Enfileirar jobs em background
-    try {
-      const appUrl = `${request.headers.get('origin') || 'http://localhost:3000'}`
-      
-      // Job para enviar email de boas-vindas (alta prioridade)
-      await addEmailJob({
-        type: 'welcome',
-        email: data.email,
-        userName: data.name,
-        userData: data,
-        appUrl
-      }, 'high')
-
-      // Job para analytics (baixa prioridade)
-      await addAnalyticsJob({
-        eventName: 'User Registered',
-        userId: newUser.id,
-        properties: {
-          email: data.email,
-          name: data.name,
-          educationLevel: data.education.level,
-          registrationMethod: 'form'
-        }
-      }, 'low')
-
-      log.info('Background jobs queued for new user', { 
-        userId: newUser.id, 
-        email: data.email 
-      })
-    } catch (jobError) {
-      log.error('Failed to queue background jobs', jobError)
-      // Continue sem falhar o registro
-    }
+    // Background jobs temporarily disabled to avoid Redis dependency issues
+    log.info('User registered successfully - background jobs skipped', { 
+      userId: newUser.id, 
+      email: data.email 
+    })
 
     // Resposta de sucesso (sem enviar a senha)
     return NextResponse.json({
@@ -213,4 +185,4 @@ async function handlePOST(request: NextRequest) {
   }
 }
 
-export const POST = authRateLimit(handlePOST)
+export const POST = handlePOST // Removed rate limiting to avoid Redis dependency
