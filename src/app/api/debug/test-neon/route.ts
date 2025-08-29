@@ -38,7 +38,7 @@ export async function GET(request: NextRequest) {
       professionsExist = true
       console.log('4. Professions table exists with', professionsTest.rows[0].count, 'records')
     } catch (profError) {
-      console.log('4. Professions table does not exist:', profError.message)
+      console.log('4. Professions table does not exist:', profError instanceof Error ? profError.message : String(profError))
     }
 
     // Test if users table exists
@@ -48,7 +48,7 @@ export async function GET(request: NextRequest) {
       usersExist = true
       console.log('5. Users table exists with', usersTest.rows[0].count, 'records')
     } catch (userError) {
-      console.log('5. Users table does not exist:', userError.message)
+      console.log('5. Users table does not exist:', userError instanceof Error ? userError.message : String(userError))
     }
 
     // List all tables
