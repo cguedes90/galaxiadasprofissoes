@@ -117,27 +117,39 @@ export default function Galaxy() {
     }
   }, [])
 
-  // Authentication functions
-  const handleLogin = async (credentials: LoginCredentials) => {
+  // Authentication functions - simplified and robust
+  const handleLogin = async (credentials: { email: string; password: string }) => {
     try {
       const response = await fetch('/api/auth/login', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(credentials),
+        body: JSON.stringify({
+          email: credentials.email.trim(),
+          password: credentials.password,
+          rememberMe: false
+        }),
       })
 
       const data = await response.json()
 
       if (!response.ok) {
+        throw new Error(data.error || 'Email ou senha incorretos')
+      }
+
+      if (!data.success) {
         throw new Error(data.error || 'Erro no login')
       }
 
       // Store auth data
-      localStorage.setItem('authToken', data.token)
-      localStorage.setItem('currentUser', JSON.stringify(data.user))
-      setCurrentUser(data.user)
+      if (data.token) {
+        localStorage.setItem('authToken', data.token)
+      }
+      if (data.user) {
+        localStorage.setItem('currentUser', JSON.stringify(data.user))
+        setCurrentUser(data.user)
+      }
       
       console.log('Login realizado com sucesso!')
     } catch (error) {
@@ -146,14 +158,21 @@ export default function Galaxy() {
     }
   }
 
-  const handleRegister = async (data: RegisterData) => {
+  const handleRegister = async (data: any) => {
     try {
       const response = await fetch('/api/auth/register', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(data),
+        body: JSON.stringify({
+          name: data.name.trim(),
+          email: data.email.trim(),
+          password: data.password,
+          confirmPassword: data.confirmPassword,
+          dateOfBirth: data.dateOfBirth,
+          agreeTerms: data.agreeTerms
+        }),
       })
 
       const result = await response.json()
@@ -162,10 +181,18 @@ export default function Galaxy() {
         throw new Error(result.error || 'Erro no cadastro')
       }
 
+      if (!result.success) {
+        throw new Error(result.error || 'Erro no cadastro')
+      }
+
       // Store auth data
-      localStorage.setItem('authToken', result.token)
-      localStorage.setItem('currentUser', JSON.stringify(result.user))
-      setCurrentUser(result.user)
+      if (result.token) {
+        localStorage.setItem('authToken', result.token)
+      }
+      if (result.user) {
+        localStorage.setItem('currentUser', JSON.stringify(result.user))
+        setCurrentUser(result.user)
+      }
       
       console.log('Cadastro realizado com sucesso!')
     } catch (error) {
