@@ -5,10 +5,10 @@ export async function GET(request: NextRequest) {
   let testPool: Pool | null = null
   
   try {
-    console.log('🔧 Force testing with hardcoded Neon connection...')
+    console.log('🔧 Force testing with environment connection...')
     
-    // HARDCODED connection string para testar
-    const connectionString = "postgresql://neondb_owner:npg_3nEFWgyPH9wa@ep-dawn-tooth-acu3fhe9-pooler.sa-east-1.aws.neon.tech/neondb?sslmode=require"
+    // Use environment variable for security
+    const connectionString = process.env.DATABASE_URL
     
     testPool = new Pool({
       connectionString,
@@ -21,7 +21,7 @@ export async function GET(request: NextRequest) {
       }
     })
 
-    console.log('1. Pool created with hardcoded connection')
+    console.log('1. Pool created with environment connection')
 
     // Test connection
     const client = await testPool.connect()
@@ -41,7 +41,7 @@ export async function GET(request: NextRequest) {
     return Response.json({
       success: true,
       data: {
-        connection: 'successful with hardcoded string',
+        connection: 'successful with environment variable',
         professionCount,
         sampleProfessions: professionsData.rows,
         environment_check: {

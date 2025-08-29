@@ -2,14 +2,14 @@ import { NextRequest } from 'next/server'
 import { Pool } from 'pg'
 import { ApiResponseHandler as ApiResponse } from '@/lib/api-response'
 
-// Temporary direct connection to bypass env variable issues
-const NEON_CONNECTION = "postgresql://neondb_owner:npg_3nEFWgyPH9wa@ep-dawn-tooth-acu3fhe9-pooler.sa-east-1.aws.neon.tech/neondb?sslmode=require"
+// Use environment variable (security compliant)
+// const NEON_CONNECTION = process.env.DATABASE_URL
 
 export async function GET(request: NextRequest) {
   let pool: Pool | null = null
   
   try {
-    console.log('🚀 Direct professions API with hardcoded connection')
+    console.log('🚀 Direct professions API with environment variable')
     
     const { searchParams } = new URL(request.url)
     const search = searchParams.get('search')?.trim()
@@ -18,9 +18,9 @@ export async function GET(request: NextRequest) {
     const limit = Math.min(100, Math.max(1, parseInt(searchParams.get('limit') || '20')))
     const offset = (page - 1) * limit
 
-    // Create pool with hardcoded connection
+    // Create pool with environment variable
     pool = new Pool({
-      connectionString: NEON_CONNECTION,
+      connectionString: process.env.DATABASE_URL,
       max: 5,
       min: 0,
       idleTimeoutMillis: 10000,

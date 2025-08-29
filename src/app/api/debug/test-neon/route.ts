@@ -7,8 +7,8 @@ export async function GET(request: NextRequest) {
   try {
     console.log('🔍 Testing Neon connection directly...')
     
-    // Test with exact connection string
-    const connectionString = "postgresql://neondb_owner:npg_3nEFWgyPH9wa@ep-dawn-tooth-acu3fhe9-pooler.sa-east-1.aws.neon.tech/neondb?sslmode=require"
+    // Test with environment variable for security
+    const connectionString = process.env.DATABASE_URL
     
     testPool = new Pool({
       connectionString,
@@ -72,7 +72,7 @@ export async function GET(request: NextRequest) {
         tables: tablesResult.rows,
         professions_exist: professionsExist,
         users_exist: usersExist,
-        connection_string_used: connectionString
+        connection_string_exists: !!connectionString
       },
       message: 'Neon connection test successful'
     })

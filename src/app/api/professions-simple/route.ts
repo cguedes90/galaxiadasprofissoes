@@ -4,9 +4,9 @@ export async function GET() {
   let pool: Pool | null = null
   
   try {
-    // Direct hardcoded connection - no env dependencies
+    // Use environment variable (security compliant)
     pool = new Pool({
-      connectionString: "postgresql://neondb_owner:npg_3nEFWgyPH9wa@ep-dawn-tooth-acu3fhe9-pooler.sa-east-1.aws.neon.tech/neondb?sslmode=require",
+      connectionString: process.env.DATABASE_URL,
       max: 3,
       ssl: { rejectUnauthorized: false }
     })
