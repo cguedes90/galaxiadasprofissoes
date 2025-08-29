@@ -179,9 +179,35 @@ async function handlePOST(request: NextRequest) {
     })
 
   } catch (error) {
-    console.error('Erro no registro:', error)
+    console.error('❌ Erro completo no registro:', error)
+    log.error('Registration error', error)
+    
+    // Provide more specific error information
+    if (error instanceof Error) {
+      console.error('Error message:', error.message)
+      console.error('Error stack:', error.stack)
+      
+      // Check for specific database errors
+      if (error.message.includes('relation') && error.message.includes('does not exist')) {
+        return NextResponse.json(
+          { error: 'Erro de configuração do banco de dados - tabela não encontrada' },
+          { status: 500 }
+        )
+      }
+      
+      if (error.message.includes('connection') || error.message.includes('connect')) {
+        return NextResponse.json(
+          { error: 'Erro de conexão com o banco de dados' },
+          { status: 500 }
+        )
+      }
+    }
+    
     return NextResponse.json(
-      { error: 'Erro interno do servidor' },
+      { 
+        error: 'Erro interno do servidor', 
+        details: process.env.NODE_ENV === 'development' ? (error instanceof Error ? error.message : String(error)) : undefined
+      },
       { status: 500 }
     )
   }
