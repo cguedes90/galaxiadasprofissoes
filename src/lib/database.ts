@@ -1,6 +1,6 @@
 import { Pool } from 'pg'
 import { env } from './env'
-// import { log } from './logger' // Temporarily disabled to avoid worker issues
+import { log } from './logger-safe' // Safe logger for all environments
 
 const pool = new Pool({
   connectionString: env.DATABASE_URL,
@@ -26,14 +26,14 @@ export async function query(text: string, params?: any[]) {
     const result = await pool.query(text, params)
     const duration = Date.now() - startTime
     
-    // Log slow queries (> 100ms) - temporarily disabled to avoid worker issues
+    // Log slow queries (> 100ms)
     if (duration > 100) {
-      console.log(`Slow query (${duration}ms):`, text.substring(0, 100))
+      log.dbQuery(text, params, duration)
     }
     
     return result
   } catch (error) {
-    console.error('Database error:', error)
+    log.dbError(text, error as Error, params)
     throw error
   }
 }

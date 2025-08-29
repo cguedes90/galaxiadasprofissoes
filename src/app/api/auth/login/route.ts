@@ -4,7 +4,7 @@ import bcrypt from 'bcryptjs'
 import { LoginCredentials } from '@/types/user'
 import { generateToken, createAuthResponse } from '@/lib/auth'
 // import { authRateLimit } from '@/lib/rate-limiter' // Disabled to avoid Redis dependency
-// import { log } from '@/lib/logger' // Disabled to avoid worker issues
+import { log } from '@/lib/logger-safe' // Safe logger for all environments
 
 async function handlePOST(request: NextRequest) {
   try {
@@ -29,7 +29,7 @@ async function handlePOST(request: NextRequest) {
     )
 
     if (userResult.rows.length === 0) {
-      console.log('User not found:', credentials.email)
+      log.authFailure(credentials.email, 'user_not_found')
       return NextResponse.json(
         { error: 'Email ou senha incorretos' },
         { status: 401 }
@@ -50,7 +50,7 @@ async function handlePOST(request: NextRequest) {
     const passwordMatch = await bcrypt.compare(credentials.password, user.password_hash)
 
     if (!passwordMatch) {
-      console.log('Password mismatch for user:', credentials.email)
+      log.authFailure(credentials.email, 'invalid_password')
       return NextResponse.json(
         { error: 'Email ou senha incorretos' },
         { status: 401 }
@@ -123,13 +123,13 @@ async function handlePOST(request: NextRequest) {
     }
 
     // Log successful authentication
-    console.log('Login successful for user:', user.email)
+    log.authSuccess(user.id, user.email)
     
     // Resposta de sucesso com cookie seguro
     return createAuthResponse(userData, token)
 
   } catch (error) {
-    console.error('Erro no login', error)
+    log.error('Erro no login', error)
     return NextResponse.json(
       { error: 'Erro interno do servidor' },
       { status: 500 }
