@@ -84,7 +84,7 @@ export class EmailService {
       const emailData: EmailData = {
         userName: userData.name,
         userEmail: userData.email,
-        userEducation: this.getEducationLabel(userData.education.level),
+        userEducation: userData.education ? this.getEducationLabel(userData.education.level) : 'Não informado',
         registrationDate: new Date().toLocaleDateString('pt-BR'),
         appUrl: appUrl
       }

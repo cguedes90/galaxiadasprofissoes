@@ -186,10 +186,7 @@ export async function POST(request: NextRequest) {
     return createAuthResponse(responseUser, token)
 
   } catch (error) {
-    log.error('Erro no registro de usuário', error, {
-      userEmail: userEmail.replace(/(.{2}).*(@.*)/, '$1***$2'),
-      timestamp: new Date().toISOString()
-    })
+    log.error(`Erro no registro de usuário para ${userEmail.replace(/(.{2}).*(@.*)/, '$1***$2')}`, error)
     
     // Check for specific database errors
     if (error instanceof Error) {

@@ -191,7 +191,7 @@ export interface RegisterData {
   confirmPassword: string
   name: string
   dateOfBirth: Date | null
-  education: {
+  education?: {
     level: EducationInfo['currentLevel']
     status: EducationInfo['status']
   }

@@ -82,7 +82,7 @@ export default function AuthModal({ isOpen, onClose, onLogin, onRegister }: Auth
         password: registerForm.password,
         confirmPassword: registerForm.confirmPassword,
         dateOfBirth: registerForm.dateOfBirth ? new Date(registerForm.dateOfBirth) : null,
-        education: registerForm.education.level ? {
+        education: (registerForm.education.level && registerForm.education.status) ? {
           level: registerForm.education.level,
           status: registerForm.education.status
         } : undefined,
