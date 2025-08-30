@@ -2,12 +2,13 @@
 
 import { useState } from 'react'
 import { motion } from 'framer-motion'
+import { LoginCredentials, RegisterData } from '@/types/user'
 
 interface AuthModalProps {
   isOpen: boolean
   onClose: () => void
-  onLogin: (credentials: { email: string; password: string }) => Promise<void>
-  onRegister: (data: any) => Promise<void>
+  onLogin: (credentials: LoginCredentials) => Promise<void>
+  onRegister: (data: RegisterData) => Promise<void>
 }
 
 export default function AuthModal({ isOpen, onClose, onLogin, onRegister }: AuthModalProps) {
@@ -28,7 +29,12 @@ export default function AuthModal({ isOpen, onClose, onLogin, onRegister }: Auth
     password: '',
     confirmPassword: '',
     dateOfBirth: '',
-    agreeTerms: false
+    education: {
+      level: '' as any,
+      status: '' as any
+    },
+    agreeTerms: false,
+    agreeNewsletter: false
   })
 
   // Password visibility states
@@ -61,37 +67,38 @@ export default function AuthModal({ isOpen, onClose, onLogin, onRegister }: Auth
     setLoading(true)
     setError('')
 
-    // Basic client-side validation
-    if (registerForm.password !== registerForm.confirmPassword) {
-      setError('Senhas não conferem')
-      setLoading(false)
-      return
-    }
-
-    if (registerForm.password.length < 8) {
-      setError('Senha deve ter pelo menos 8 caracteres')
-      setLoading(false)
-      return
-    }
-
-    if (!registerForm.agreeTerms) {
-      setError('Você deve aceitar os termos de uso')
+    // Enhanced client-side validation
+    const validationError = validateRegistrationForm(registerForm)
+    if (validationError) {
+      setError(validationError)
       setLoading(false)
       return
     }
 
     try {
-      await onRegister({
-        name: registerForm.name,
-        email: registerForm.email,
+      const registrationData: RegisterData = {
+        name: registerForm.name.trim(),
+        email: registerForm.email.toLowerCase().trim(),
         password: registerForm.password,
         confirmPassword: registerForm.confirmPassword,
-        dateOfBirth: registerForm.dateOfBirth,
-        agreeTerms: registerForm.agreeTerms
-      })
+        dateOfBirth: registerForm.dateOfBirth ? new Date(registerForm.dateOfBirth) : null,
+        education: registerForm.education.level ? {
+          level: registerForm.education.level,
+          status: registerForm.education.status
+        } : undefined,
+        agreeTerms: registerForm.agreeTerms,
+        agreeNewsletter: registerForm.agreeNewsletter
+      }
+      
+      await onRegister(registrationData)
       onClose()
     } catch (err: any) {
-      setError(err.message || 'Erro no cadastro')
+      // Handle specific API errors
+      if (err.field) {
+        setError(`${err.message} (${err.field})`)
+      } else {
+        setError(err.message || 'Erro no cadastro')
+      }
     } finally {
       setLoading(false)
     }
@@ -105,7 +112,12 @@ export default function AuthModal({ isOpen, onClose, onLogin, onRegister }: Auth
       password: '',
       confirmPassword: '',
       dateOfBirth: '',
-      agreeTerms: false
+      education: {
+        level: '',
+        status: ''
+      },
+      agreeTerms: false,
+      agreeNewsletter: false
     })
     setError('')
     setShowLoginPassword(false)
@@ -117,6 +129,58 @@ export default function AuthModal({ isOpen, onClose, onLogin, onRegister }: Auth
     setMode(newMode)
     resetForms()
   }
+
+  // Client-side validation function
+  const validateRegistrationForm = (form: typeof registerForm): string | null => {
+    if (!form.name.trim()) return 'Nome é obrigatório'
+    if (form.name.trim().length < 2) return 'Nome deve ter pelo menos 2 caracteres'
+    
+    if (!form.email.trim()) return 'Email é obrigatório'
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    if (!emailRegex.test(form.email.trim())) return 'Email deve ter um formato válido'
+    
+    if (!form.password) return 'Senha é obrigatória'
+    if (form.password.length < 8) return 'Senha deve ter pelo menos 8 caracteres'
+    
+    // Password strength check
+    const hasLowerCase = /[a-z]/.test(form.password)
+    const hasUpperCase = /[A-Z]/.test(form.password)
+    const hasNumbers = /\d/.test(form.password)
+    const hasSpecialChar = /[!@#$%^&*(),.?":{}|<>]/.test(form.password)
+    const strengthCount = [hasLowerCase, hasUpperCase, hasNumbers, hasSpecialChar].filter(Boolean).length
+    
+    if (strengthCount < 2) {
+      return 'Senha deve conter pelo menos 2 tipos: minúsculas, maiúsculas, números ou símbolos'
+    }
+    
+    if (form.password !== form.confirmPassword) return 'Senhas não conferem'
+    
+    if (!form.dateOfBirth) return 'Data de nascimento é obrigatória'
+    
+    // Age validation
+    const birthDate = new Date(form.dateOfBirth)
+    const today = new Date()
+    let age = today.getFullYear() - birthDate.getFullYear()
+    const monthDiff = today.getMonth() - birthDate.getMonth()
+    
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+      age--
+    }
+    
+    if (age < 13) return 'Você deve ter pelo menos 13 anos para se cadastrar'
+    if (birthDate > today) return 'Data de nascimento não pode ser no futuro'
+    
+    if (!form.agreeTerms) return 'Você deve aceitar os termos de uso'
+    
+    // Education validation (if provided)
+    if (form.education.level && !form.education.status) {
+      return 'Se você informou o nível de educação, deve informar também o status'
+    }
+    
+    return null
+  }
+
+  if (!isOpen) return null
 
   return (
     <motion.div
@@ -247,7 +311,59 @@ export default function AuthModal({ isOpen, onClose, onLogin, onRegister }: Auth
                   value={registerForm.dateOfBirth}
                   onChange={(e) => setRegisterForm({ ...registerForm, dateOfBirth: e.target.value })}
                   className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  max={new Date(Date.now() - 13 * 365.25 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]} // Máximo: 13 anos atrás
+                  min={new Date(Date.now() - 120 * 365.25 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]} // Mínimo: 120 anos atrás
                 />
+              </div>
+              
+              {/* Education Section */}
+              <div className="space-y-3">
+                <h4 className="text-sm font-medium text-gray-700">Informações Educacionais (Opcional)</h4>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Nível de Educação
+                  </label>
+                  <select
+                    value={registerForm.education.level}
+                    onChange={(e) => setRegisterForm({ 
+                      ...registerForm, 
+                      education: { ...registerForm.education, level: e.target.value as any } 
+                    })}
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="">Selecione seu nível</option>
+                    <option value="ensino_fundamental">Ensino Fundamental</option>
+                    <option value="ensino_medio">Ensino Médio</option>
+                    <option value="ensino_tecnico">Ensino Técnico</option>
+                    <option value="ensino_superior">Ensino Superior</option>
+                    <option value="pos_graduacao">Pós-graduação</option>
+                    <option value="mestrado">Mestrado</option>
+                    <option value="doutorado">Doutorado</option>
+                  </select>
+                </div>
+                
+                {registerForm.education.level && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Status
+                    </label>
+                    <select
+                      value={registerForm.education.status}
+                      onChange={(e) => setRegisterForm({ 
+                        ...registerForm, 
+                        education: { ...registerForm.education, status: e.target.value as any } 
+                      })}
+                      className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                      <option value="">Selecione o status</option>
+                      <option value="estudando">Estudando</option>
+                      <option value="concluido">Concluído</option>
+                      <option value="interrompido">Interrompido</option>
+                      <option value="pretendo_cursar">Pretendo Cursar</option>
+                    </select>
+                  </div>
+                )}
               </div>
 
               <div>
@@ -296,18 +412,41 @@ export default function AuthModal({ isOpen, onClose, onLogin, onRegister }: Auth
                 </div>
               </div>
 
-              <div className="flex items-start">
-                <input
-                  type="checkbox"
-                  id="agreeTerms"
-                  required
-                  checked={registerForm.agreeTerms}
-                  onChange={(e) => setRegisterForm({ ...registerForm, agreeTerms: e.target.checked })}
-                  className="mt-1 mr-3"
-                />
-                <label htmlFor="agreeTerms" className="text-sm text-gray-600">
-                  Aceito os termos de uso e política de privacidade
-                </label>
+              {/* Terms and Newsletter */}
+              <div className="space-y-3">
+                <div className="flex items-start">
+                  <input
+                    type="checkbox"
+                    id="agreeTerms"
+                    required
+                    checked={registerForm.agreeTerms}
+                    onChange={(e) => setRegisterForm({ ...registerForm, agreeTerms: e.target.checked })}
+                    className="mt-1 mr-3 h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                  />
+                  <label htmlFor="agreeTerms" className="text-sm text-gray-600">
+                    Aceito os{' '}
+                    <a href="/termos" target="_blank" className="text-blue-600 hover:underline">
+                      termos de uso
+                    </a>{' '}
+                    e{' '}
+                    <a href="/privacidade" target="_blank" className="text-blue-600 hover:underline">
+                      política de privacidade
+                    </a>
+                  </label>
+                </div>
+                
+                <div className="flex items-start">
+                  <input
+                    type="checkbox"
+                    id="agreeNewsletter"
+                    checked={registerForm.agreeNewsletter}
+                    onChange={(e) => setRegisterForm({ ...registerForm, agreeNewsletter: e.target.checked })}
+                    className="mt-1 mr-3 h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                  />
+                  <label htmlFor="agreeNewsletter" className="text-sm text-gray-600">
+                    Quero receber novidades e dicas sobre carreiras por email (opcional)
+                  </label>
+                </div>
               </div>
 
               <button

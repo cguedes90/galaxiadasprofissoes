@@ -158,7 +158,7 @@ export default function Galaxy() {
     }
   }
 
-  const handleRegister = async (data: any) => {
+  const handleRegister = async (data: RegisterData) => {
     try {
       const response = await fetch('/api/auth/register', {
         method: 'POST',
@@ -167,22 +167,36 @@ export default function Galaxy() {
         },
         body: JSON.stringify({
           name: data.name.trim(),
-          email: data.email.trim(),
+          email: data.email.toLowerCase().trim(),
           password: data.password,
           confirmPassword: data.confirmPassword,
           dateOfBirth: data.dateOfBirth,
-          agreeTerms: data.agreeTerms
+          education: data.education,
+          agreeTerms: data.agreeTerms,
+          agreeNewsletter: data.agreeNewsletter
         }),
       })
 
       const result = await response.json()
 
       if (!response.ok) {
-        throw new Error(result.error || 'Erro no cadastro')
+        // Create error object with field information if available
+        const error = new Error(result.error || 'Erro no cadastro') as any
+        if (result.field) {
+          error.field = result.field
+        }
+        if (result.validationErrors) {
+          error.validationErrors = result.validationErrors
+        }
+        throw error
       }
 
       if (!result.success) {
-        throw new Error(result.error || 'Erro no cadastro')
+        const error = new Error(result.error || 'Erro no cadastro') as any
+        if (result.field) {
+          error.field = result.field
+        }
+        throw error
       }
 
       // Store auth data
@@ -191,12 +205,19 @@ export default function Galaxy() {
       }
       if (result.user) {
         localStorage.setItem('currentUser', JSON.stringify(result.user))
-        setCurrentUser(result.user)
+        setCurrentUser({
+          ...result.user,
+          token: result.token
+        })
       }
       
-      console.log('Cadastro realizado com sucesso!')
+      console.log('🎉 Cadastro realizado com sucesso!', {
+        userId: result.user?.id,
+        name: result.user?.name,
+        hasEducation: !!data.education?.level
+      })
     } catch (error) {
-      console.error('Erro no cadastro:', error)
+      console.error('❌ Erro no cadastro:', error)
       throw error
     }
   }
