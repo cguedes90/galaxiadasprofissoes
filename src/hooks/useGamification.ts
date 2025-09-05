@@ -136,7 +136,8 @@ export const useGamification = () => {
         professionsViewed: progress.professionsViewed,
         areasExplored: progress.areasExplored,
         testsCompleted: progress.testsCompleted,
-        wishlistSize: 0 // TODO: implementar wishlist
+        wishlistSize: 0, // TODO: implementar wishlist
+        favoritesCount: 0 // TODO: implementar contagem de favoritos
       })
 
       if (shouldUnlock) {

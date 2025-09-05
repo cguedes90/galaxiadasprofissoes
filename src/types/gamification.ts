@@ -5,7 +5,7 @@ export interface Achievement {
   icon: string
   category: 'exploration' | 'knowledge' | 'completion' | 'social'
   condition: {
-    type: 'profession_viewed' | 'test_completed' | 'areas_explored' | 'wishlist_size'
+    type: 'profession_viewed' | 'test_completed' | 'areas_explored' | 'wishlist_size' | 'favorites_count'
     target: number
     current?: number
   }
