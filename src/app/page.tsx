@@ -1,4 +1,4 @@
-import Galaxy from '@/components/GalaxyImproved'
+import Galaxy from '@/components/Galaxy'
 
 export default function Home() {
   return (

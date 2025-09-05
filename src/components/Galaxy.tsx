@@ -44,22 +44,24 @@ export default function Galaxy() {
 
   // Função para distribuir estrelas sem sobreposição
   const distributeStars = useCallback((professions: Profession[]) => {
+    console.log(`🌌 Distribuindo ${professions.length} estrelas com seed: ${galaxySeed}`)
+    
     const positions: { x: number, y: number }[] = []
-    const minDistance = 80 // Distância mínima entre estrelas (aumentada)
-    const galaxyRadius = 600 // Raio da galáxia
-    const maxAttempts = 50 // Tentativas máximas para encontrar posição
+    const minDistance = 150 // DISTÂNCIA MÍNIMA AUMENTADA DRASTICAMENTE
+    const galaxyRadius = 800 // Raio da galáxia aumentado
+    const maxAttempts = 100 // Mais tentativas
 
     return professions.map((profession, index) => {
       let x, y, attempts = 0
       let validPosition = false
 
-      // Usar seed + index para gerar posições determinísticas mas diferentes a cada dia
-      const seedBase = galaxySeed + index * 1000
+      // Usar seed + index para gerar posições determinísticas
+      const seedBase = galaxySeed + index * 1337
 
       do {
         // Gerar posição usando seed
         const angle = seededRandom(seedBase + attempts * 100) * Math.PI * 2
-        const radius = seededRandom(seedBase + attempts * 200) * galaxyRadius
+        const radius = Math.sqrt(seededRandom(seedBase + attempts * 200)) * galaxyRadius // sqrt para distribuição mais uniforme
         
         x = Math.cos(angle) * radius
         y = Math.sin(angle) * radius
@@ -73,12 +75,15 @@ export default function Galaxy() {
         attempts++
       } while (!validPosition && attempts < maxAttempts)
 
-      // Se não encontrou posição válida, usa grid como fallback
+      // Se não encontrou posição válida, usa grid espaçado como fallback
       if (!validPosition) {
         const gridSize = Math.ceil(Math.sqrt(professions.length))
         const gridIndex = positions.length
-        x = (gridIndex % gridSize - gridSize / 2) * minDistance * 1.5
-        y = (Math.floor(gridIndex / gridSize) - gridSize / 2) * minDistance * 1.5
+        x = (gridIndex % gridSize - gridSize / 2) * minDistance * 1.8
+        y = (Math.floor(gridIndex / gridSize) - gridSize / 2) * minDistance * 1.8
+        console.log(`⚠️ Usando fallback grid para estrela ${index}: (${x}, ${y})`)
+      } else {
+        console.log(`✅ Posição válida encontrada para estrela ${index} após ${attempts} tentativas: (${x}, ${y})`)
       }
 
       positions.push({ x, y })
@@ -87,7 +92,7 @@ export default function Galaxy() {
         ...profession,
         x_position: Math.round(x),
         y_position: Math.round(y),
-        dynamicPosition: true // Flag para indicar que a posição foi calculada dinamicamente
+        dynamicPosition: true
       }
     })
   }, [galaxySeed])
@@ -98,6 +103,11 @@ export default function Galaxy() {
   }, [])
 
   const fetchProfessions = useCallback(async () => {
+    if (galaxySeed === 0) {
+      console.log('⏳ Aguardando inicialização do seed...')
+      return // Aguarda o seed ser inicializado
+    }
+    
     try {
       const params = new URLSearchParams()
       params.append('all', 'true') // Buscar todas as profissões
@@ -113,9 +123,11 @@ export default function Galaxy() {
       
       if (result.success && Array.isArray(result.data)) {
         console.log(`✅ Carregadas ${result.data.length} profissões`)
+        console.log('🌌 Iniciando distribuição das estrelas...')
         
         // Distribuir estrelas com novo algoritmo
         const distributedProfessions = distributeStars(result.data)
+        console.log(`⭐ Primeira estrela após distribuição:`, distributedProfessions[0])
         setProfessions(distributedProfessions)
         
         // Pega o total do meta.total ou meta.pagination.total ou usa o tamanho do array como fallback
@@ -136,7 +148,7 @@ export default function Galaxy() {
       setProfessions(distributedFallback)
       setTotalProfessions(fallbackProfessions.length)
     }
-  }, [searchQuery, selectedArea, distributeStars])
+  }, [searchQuery, selectedArea, galaxySeed, distributeStars])
 
   useEffect(() => {
     fetchProfessions()
@@ -144,7 +156,10 @@ export default function Galaxy() {
 
   // Função para regenerar a galáxia
   const regenerateGalaxy = () => {
-    setGalaxySeed(Date.now()) // Usar timestamp atual como novo seed
+    console.log('🔄 Regenerando galáxia...')
+    const newSeed = Date.now()
+    console.log('🆕 Novo seed:', newSeed)
+    setGalaxySeed(newSeed)
     fetchProfessions()
   }
 
@@ -406,10 +421,10 @@ export default function Galaxy() {
         
         <button
           onClick={regenerateGalaxy}
-          className="w-full mt-2 px-3 py-1 bg-purple-500 bg-opacity-70 hover:bg-opacity-90 text-white rounded text-xs transition-all hover:scale-105"
+          className="w-full mt-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-md text-sm font-bold transition-all hover:scale-105 shadow-lg border-2 border-purple-400"
           title="Clique para reorganizar as estrelas"
         >
-          🌌 Regenerar Galáxia
+          🌌 REGENERAR GALÁXIA 🌌
         </button>
         
         <div className="border-t border-gray-600 pt-2 mt-2">

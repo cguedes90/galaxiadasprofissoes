@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Profession } from '@/types/profession'
 import { VocationalResult } from '@/types/vocational-test'
@@ -31,6 +31,7 @@ export default function Galaxy() {
   const [showAuthModal, setShowAuthModal] = useState(false)
   const [showAdminPanel, setShowAdminPanel] = useState(false)
   const [currentUser, setCurrentUser] = useState<AuthUser | null>(null)
+  const [galaxySeed, setGalaxySeed] = useState(0)
   
   const containerRef = useRef<HTMLDivElement>(null)
   
@@ -56,51 +57,136 @@ export default function Galaxy() {
     dailyLimit
   } = useFreePlanLimit()
 
+  // Função para gerar seed baseado na data (muda a cada dia)
+  const generateDailySeed = () => {
+    const today = new Date()
+    const dateString = today.toDateString()
+    let hash = 0
+    for (let i = 0; i < dateString.length; i++) {
+      const char = dateString.charCodeAt(i)
+      hash = ((hash << 5) - hash) + char
+      hash = hash & hash // Convert to 32bit integer
+    }
+    return Math.abs(hash)
+  }
+
+  // Gerador de números pseudo-aleatórios com seed
+  const seededRandom = (seed: number) => {
+    let x = Math.sin(seed) * 10000
+    return x - Math.floor(x)
+  }
+
+  // Função para distribuir estrelas sem sobreposição
+  const distributeStars = useCallback((professions: Profession[]) => {
+    console.log(`🌌 Distribuindo ${professions.length} estrelas com seed: ${galaxySeed}`)
+    
+    const positions: { x: number, y: number }[] = []
+    const minDistance = 150 // DISTÂNCIA MÍNIMA AUMENTADA DRASTICAMENTE
+    const galaxyRadius = 800 // Raio da galáxia aumentado
+    const maxAttempts = 100 // Mais tentativas
+
+    return professions.map((profession, index) => {
+      let x, y, attempts = 0
+      let validPosition = false
+
+      // Usar seed + index para gerar posições determinísticas
+      const seedBase = galaxySeed + index * 1337
+
+      do {
+        // Gerar posição usando seed
+        const angle = seededRandom(seedBase + attempts * 100) * Math.PI * 2
+        const radius = Math.sqrt(seededRandom(seedBase + attempts * 200)) * galaxyRadius // sqrt para distribuição mais uniforme
+        
+        x = Math.cos(angle) * radius
+        y = Math.sin(angle) * radius
+
+        // Verificar se a posição está suficientemente longe das outras
+        validPosition = positions.every(pos => {
+          const distance = Math.sqrt((x - pos.x) ** 2 + (y - pos.y) ** 2)
+          return distance >= minDistance
+        })
+
+        attempts++
+      } while (!validPosition && attempts < maxAttempts)
+
+      // Se não encontrou posição válida, usa grid espaçado como fallback
+      if (!validPosition) {
+        const gridSize = Math.ceil(Math.sqrt(professions.length))
+        const gridIndex = positions.length
+        x = (gridIndex % gridSize - gridSize / 2) * minDistance * 1.8
+        y = (Math.floor(gridIndex / gridSize) - gridSize / 2) * minDistance * 1.8
+        console.log(`⚠️ Usando fallback grid para estrela ${index}: (${x}, ${y})`)
+      } else {
+        console.log(`✅ Posição válida encontrada para estrela ${index} após ${attempts} tentativas: (${x}, ${y})`)
+      }
+
+      positions.push({ x, y })
+
+      return {
+        ...profession,
+        x_position: Math.round(x),
+        y_position: Math.round(y),
+        dynamicPosition: true
+      }
+    })
+  }, [galaxySeed])
+
+  // Inicializar seed na primeira renderização
+  useEffect(() => {
+    setGalaxySeed(generateDailySeed())
+  }, [])
+
   const fetchProfessions = async () => {
+    if (galaxySeed === 0) {
+      console.log('⏳ Aguardando inicialização do seed...')
+      return // Aguarda o seed ser inicializado
+    }
+    
     try {
       const params = new URLSearchParams()
+      params.append('all', 'true') // Buscar todas as profissões
       if (searchQuery) params.append('search', searchQuery)
       if (selectedArea) params.append('area', selectedArea)
       
-      // Para a galáxia, queremos mostrar todas as profissões, não apenas uma página
-      params.append('limit', '100') // Buscar até 100 profissões para mostrar todas na galáxia
+      console.log(`🚀 Buscando todas as profissões da API principal`)
       const response = await fetch(`/api/professions?${params}`)
-      console.log('API Response status:', response.status)
+      console.log('📊 API Response status:', response.status)
+      
       const result = await response.json()
-      console.log('API Response data:', result)
+      console.log('📊 API Response data:', result)
       
       if (result.success && Array.isArray(result.data)) {
         console.log(`✅ Carregadas ${result.data.length} profissões`)
-        console.log('📊 Estrutura completa da resposta:', result)
-        setProfessions(result.data)
-        // Pega o total do meta.pagination ou usa o tamanho do array como fallback
-        let totalFromAPI = 0
-        if (result.meta && result.meta.pagination && result.meta.pagination.total) {
-          totalFromAPI = result.meta.pagination.total
-        } else {
-          totalFromAPI = result.data.length
-        }
+        console.log('🌌 Iniciando distribuição das estrelas...')
+        
+        // Distribuir estrelas com novo algoritmo
+        const distributedProfessions = distributeStars(result.data)
+        console.log(`⭐ Primeira estrela após distribuição:`, distributedProfessions[0])
+        setProfessions(distributedProfessions)
+        
+        // Pega o total do meta.total ou meta.pagination.total ou usa o tamanho do array como fallback
+        const totalFromAPI = result.meta?.total || result.meta?.pagination?.total || result.data.length
         console.log(`🔢 Total de profissões: ${totalFromAPI}`)
-        console.log('🔍 Meta object:', result.meta)
-        console.log('🔍 Pagination object:', result.meta?.pagination)
-        setTotalProfessions(Number(totalFromAPI))
+        setTotalProfessions(totalFromAPI)
       } else {
         console.error('❌ Resposta da API inválida:', result)
         console.log('🔄 Usando profissões de fallback')
-        setProfessions(fallbackProfessions)
+        const distributedFallback = distributeStars(fallbackProfessions as Profession[])
+        setProfessions(distributedFallback)
         setTotalProfessions(fallbackProfessions.length)
       }
     } catch (error) {
       console.error('Falha ao buscar profissões:', error)
       console.log('🔄 Usando profissões de fallback')
-      setProfessions(fallbackProfessions as Profession[])
+      const distributedFallback = distributeStars(fallbackProfessions as Profession[])
+      setProfessions(distributedFallback)
       setTotalProfessions(fallbackProfessions.length)
     }
   }
 
   useEffect(() => {
     fetchProfessions()
-  }, [searchQuery, selectedArea])
+  }, [searchQuery, selectedArea, galaxySeed, distributeStars])
 
   // Check for existing auth token on component mount
   useEffect(() => {
@@ -227,6 +313,15 @@ export default function Galaxy() {
     localStorage.removeItem('currentUser')
     setCurrentUser(null)
     console.log('Logout realizado com sucesso!')
+  }
+
+  // Função para regenerar a galáxia
+  const regenerateGalaxy = () => {
+    console.log('🔄 Regenerando galáxia...')
+    const newSeed = Date.now()
+    console.log('🆕 Novo seed:', newSeed)
+    setGalaxySeed(newSeed)
+    fetchProfessions()
   }
 
   // Mouse events
@@ -659,12 +754,30 @@ export default function Galaxy() {
       </AnimatePresence>
 
       {/* Instructions */}
-      <div className="absolute bottom-4 left-4 text-white text-sm bg-black bg-opacity-50 p-3 rounded z-10">
-        <div>🖱️ Arraste para navegar</div>
-        <div>🔍 Use a roda do mouse para zoom</div>
-        <div>⭐ Clique nas estrelas para ver detalhes</div>
-        <div>🔗 Clique nas profissões relacionadas para explorá-las</div>
-        <div>🧠 Faça o teste vocacional para recomendações personalizadas</div>
+      <div className="absolute bottom-4 left-4 text-white text-sm bg-black bg-opacity-50 p-3 rounded space-y-2 z-10">
+        <div className="flex items-center space-x-2">
+          <div className="w-2 h-2 bg-gradient-to-r from-blue-400 to-purple-500 rounded-full animate-pulse"></div>
+          <span className="font-semibold">
+            {filteredProfessions.length} profissões em nossa galáxia
+          </span>
+        </div>
+        
+        <button
+          onClick={regenerateGalaxy}
+          className="w-full mt-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-md text-sm font-bold transition-all hover:scale-105 shadow-lg border-2 border-purple-400"
+          title="Clique para reorganizar as estrelas"
+        >
+          🌌 REGENERAR GALÁXIA 🌌
+        </button>
+        
+        <div className="border-t border-gray-600 pt-2 mt-2">
+          <div>🖱️ Arraste para navegar</div>
+          <div>🔍 Use a roda do mouse para zoom</div>
+          <div>⭐ Clique nas estrelas para ver detalhes</div>
+          <div>🔗 Clique nas profissões relacionadas para explorá-las</div>
+          <div>🧠 Faça o teste vocacional para recomendações personalizadas</div>
+          <div>🌌 Regenere para nova distribuição</div>
+        </div>
         {!currentUser && (
           <div className="mt-2 pt-2 border-t border-gray-600">
             <div>🆓 <strong>Plano Gratuito:</strong> {remainingViews}/{dailyLimit} visualizações restantes</div>
