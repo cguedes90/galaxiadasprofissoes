@@ -38,7 +38,7 @@ export default function VocationalTest({ onClose, onComplete }: VocationalTestPr
       R: 0, I: 0, A: 0, S: 0, E: 0, C: 0
     }
 
-    // Calcular pontuações por categoria
+    // Calcular pontuações por categoria com pesos melhorados
     test.questions.forEach((question, index) => {
       const selectedOption = answers[index]
       if (selectedOption) {
@@ -51,36 +51,74 @@ export default function VocationalTest({ onClose, onComplete }: VocationalTestPr
       }
     })
 
-    // Encontrar top 3 categorias
-    const sortedCategories = Object.entries(categoryScores)
+    // Normalizar pontuações (0-100)
+    const totalQuestions = test.questions.length
+    const normalizedScores: {[key: string]: number} = {}
+    
+    Object.entries(categoryScores).forEach(([category, score]) => {
+      // Máximo possível: perguntas * peso máximo (3)
+      const maxPossible = totalQuestions * 3
+      normalizedScores[category] = Math.round((score / maxPossible) * 100)
+    })
+
+    // Encontrar top 3 categorias com base na pontuação normalizada
+    const sortedCategories = Object.entries(normalizedScores)
       .sort(([,a], [,b]) => b - a)
       .slice(0, 3)
 
     const topCategories = sortedCategories.map(([category]) => category)
 
-    // Mapear profissões compatíveis
+    // Melhorar o sistema de matching de profissões
     const matchedProfessions: {
       profession: string
       compatibility: number
       reasons: string[]
     }[] = []
     
-    for (const [categoryKey, categoryData] of Object.entries(VOCATIONAL_CATEGORIES)) {
-      const score = categoryScores[categoryKey]
-      const maxScore = test.questions.length * 3 // Peso máximo possível
-      const compatibility = Math.round((score / maxScore) * 100)
-
-      if (compatibility > 30) { // Só incluir se tiver pelo menos 30% de compatibilidade
-        categoryData.professions.forEach(profession => {
+    // Definir profissões base compatíveis com cada categoria
+    const categoryProfessions: {[key: string]: string[]} = {
+      R: ['Engenheiro Civil', 'Engenheiro Elétrico', 'Arquiteto', 'Chef de Cozinha'],
+      I: ['Cientista de Dados', 'Desenvolvedor Full Stack', 'Engenheiro de Software', 'Especialista em IA e Machine Learning', 'Analista de Dados', 'Químico', 'Biólogo'],
+      A: ['Designer UX/UI', 'Designer Gráfico', 'Designer de Experiência em Realidade Virtual', 'Jornalista', 'Tradutor'],
+      S: ['Médico Cardiologista', 'Psicólogo Clínico', 'Enfermeiro', 'Professor de Ensino Médio', 'Fisioterapeuta', 'Nutricionista', 'Dentista', 'Veterinário', 'Terapeuta Digital'],
+      E: ['Advogado', 'Marketing Digital', 'Product Manager'],
+      C: ['Contador', 'Farmacêutico', 'Biomédico']
+    }
+    
+    // Calcular compatibilidade para cada categoria
+    for (const [categoryKey, professions] of Object.entries(categoryProfessions)) {
+      const categoryScore = normalizedScores[categoryKey]
+      
+      if (categoryScore > 25) { // Threshold mínimo mais baixo
+        professions.forEach(profession => {
           const reasons = []
+          let compatibility = categoryScore
+          
+          // Bonus para categorias principais
           if (topCategories.includes(categoryKey)) {
-            reasons.push(`Forte afinidade com perfil ${categoryData.name}`)
+            const categoryName = VOCATIONAL_CATEGORIES[categoryKey as keyof typeof VOCATIONAL_CATEGORIES]?.name || categoryKey
+            reasons.push(`Forte afinidade com perfil ${categoryName}`)
+            compatibility += 10 // Bonus de 10%
+          }
+          
+          // Bonus para combinações de categorias
+          const topCategoryScores = topCategories.map(cat => normalizedScores[cat])
+          if (topCategoryScores.length >= 2 && topCategoryScores[1] > 40) {
+            reasons.push('Perfil equilibrado entre múltiplas áreas')
+            compatibility += 5
+          }
+          
+          // Ajustar compatibilidade baseado na distribuição de pontos
+          const scoreVariance = Math.abs(categoryScore - (Object.values(normalizedScores).reduce((a, b) => a + b, 0) / 6))
+          if (scoreVariance > 20) {
+            reasons.push('Perfil bem definido para esta área')
+            compatibility += 5
           }
           
           matchedProfessions.push({
             profession,
-            compatibility,
-            reasons
+            compatibility: Math.min(compatibility, 100), // Cap at 100%
+            reasons: reasons.length > 0 ? reasons : [`Boa afinidade com o perfil ${categoryKey}`]
           })
         })
       }
@@ -96,10 +134,10 @@ export default function VocationalTest({ onClose, onComplete }: VocationalTestPr
         return acc
       }, [] as typeof matchedProfessions)
       .sort((a, b) => b.compatibility - a.compatibility)
-      .slice(0, 8) // Top 8 profissões
+      .slice(0, 10) // Top 10 profissões
 
     const finalResult: VocationalResult = {
-      categories: categoryScores,
+      categories: normalizedScores,
       topCategories,
       matchedProfessions: uniqueProfessions
     }

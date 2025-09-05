@@ -9,6 +9,7 @@ import { fallbackProfessions } from '@/data/fallback-professions'
 
 export default function Galaxy() {
   const [professions, setProfessions] = useState<Profession[]>([])
+  const [totalProfessions, setTotalProfessions] = useState<number>(0)
   const [selectedProfession, setSelectedProfession] = useState<Profession | null>(null)
   const [position, setPosition] = useState({ x: 0, y: 0 })
   const [scale, setScale] = useState(1)
@@ -35,15 +36,21 @@ export default function Galaxy() {
       if (result.success && Array.isArray(result.data)) {
         console.log(`✅ Carregadas ${result.data.length} profissões`)
         setProfessions(result.data)
+        // Pega o total do meta.pagination ou usa o tamanho do array como fallback
+        const totalFromAPI = result.meta?.pagination?.total || result.data.length
+        console.log(`🔢 Total de profissões: ${totalFromAPI}`)
+        setTotalProfessions(totalFromAPI)
       } else {
         console.error('❌ Resposta da API inválida:', result)
         console.log('🔄 Usando profissões de fallback')
         setProfessions(fallbackProfessions)
+        setTotalProfessions(fallbackProfessions.length)
       }
     } catch (error) {
       console.error('Falha ao buscar profissões:', error)
       console.log('🔄 Usando profissões de fallback')
       setProfessions(fallbackProfessions as Profession[])
+      setTotalProfessions(fallbackProfessions.length)
     }
   }, [searchQuery, selectedArea])
 
@@ -259,9 +266,6 @@ export default function Galaxy() {
             {filteredProfessions.length} profissões em nossa galáxia
           </span>
         </div>
-        <div className="text-xs text-gray-300">
-          🌌 Galáxia em constante crescimento...
-        </div>
         <div className="border-t border-gray-600 pt-2 mt-2">
           <div>🖱️ Arraste para navegar</div>
           <div>🔍 Use a roda do mouse para zoom</div>
@@ -275,6 +279,9 @@ export default function Galaxy() {
           <div className="font-semibold mb-2 flex items-center">
             <div className="w-2 h-2 bg-yellow-400 rounded-full mr-2"></div>
             Áreas Disponíveis
+          </div>
+          <div className="text-xs text-gray-300 mb-3 border-b border-gray-600 pb-2">
+            🌌 Galáxia com {totalProfessions || 0} profissões em constante expansão...
           </div>
           <div className="grid grid-cols-2 gap-1 text-xs">
             {Array.from(new Set(filteredProfessions.map(p => p.area)))

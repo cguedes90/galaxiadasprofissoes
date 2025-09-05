@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { Achievement, UserProgress, Journey, WishlistItem } from '@/types/gamification'
 import { DEFAULT_ACHIEVEMENTS, calculateUserLevel, getExperienceForNextLevel } from '@/data/achievements'
 import { GUIDED_JOURNEYS } from '@/data/journeys'
+import FavoritesList from './FavoritesList'
 
 interface GamificationPanelProps {
   isOpen: boolean
@@ -19,7 +20,7 @@ export default function GamificationPanel({
   userProgress,
   onStartJourney 
 }: GamificationPanelProps) {
-  const [activeTab, setActiveTab] = useState<'progress' | 'achievements' | 'journeys' | 'wishlist'>('progress')
+  const [activeTab, setActiveTab] = useState<'progress' | 'achievements' | 'journeys' | 'favorites'>('progress')
 
   if (!isOpen) return null
 
@@ -77,7 +78,7 @@ export default function GamificationPanel({
             { key: 'progress', label: 'Progresso', icon: '📊' },
             { key: 'achievements', label: 'Conquistas', icon: '🏆' },
             { key: 'journeys', label: 'Jornadas', icon: '🗺️' },
-            { key: 'wishlist', label: 'Lista de Desejos', icon: '⭐' }
+            { key: 'favorites', label: 'Favoritos', icon: '❤️' }
           ].map(tab => (
             <button
               key={tab.key}
@@ -234,16 +235,18 @@ export default function GamificationPanel({
             </div>
           )}
 
-          {/* Wishlist Tab */}
-          {activeTab === 'wishlist' && (
-            <div className="text-center py-12">
-              <div className="text-6xl mb-4">⭐</div>
-              <h3 className="text-xl font-semibold mb-2">Lista de Desejos</h3>
-              <p className="text-gray-600">Recurso em desenvolvimento</p>
-              <p className="text-sm text-gray-500 mt-2">
-                Em breve você poderá salvar suas profissões favoritas!
-              </p>
-            </div>
+          {/* Favorites Tab */}
+          {activeTab === 'favorites' && (
+            <FavoritesList 
+              limit={6}
+              showEmpty={true}
+              className="space-y-6"
+              onProfessionClick={(profession) => {
+                // Close the gamification panel and show profession modal
+                onClose()
+                // You can add profession click handling here if needed
+              }}
+            />
           )}
         </div>
       </motion.div>

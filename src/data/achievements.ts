@@ -87,6 +87,54 @@ export const DEFAULT_ACHIEVEMENTS: Achievement[] = [
 
   // Completude
   {
+    id: 'first_favorite',
+    title: 'Primeira Paixão',
+    description: 'Adicione sua primeira profissão aos favoritos',
+    icon: '💖',
+    category: 'completion',
+    condition: {
+      type: 'favorites_count',
+      target: 1
+    },
+    reward: {
+      type: 'badge',
+      value: 'Primeira Paixão'
+    },
+    unlocked: false
+  },
+  {
+    id: 'favorites_collector',
+    title: 'Colecionador de Favoritos',
+    description: 'Adicione 5 profissões aos seus favoritos',
+    icon: '⭐',
+    category: 'completion',
+    condition: {
+      type: 'favorites_count',
+      target: 5
+    },
+    reward: {
+      type: 'badge',
+      value: 'Colecionador de Favoritos'
+    },
+    unlocked: false
+  },
+  {
+    id: 'favorites_master',
+    title: 'Mestre dos Favoritos',
+    description: 'Adicione 10 profissões aos seus favoritos',
+    icon: '🌟',
+    category: 'completion',
+    condition: {
+      type: 'favorites_count',
+      target: 10
+    },
+    reward: {
+      type: 'title',
+      value: 'Mestre dos Favoritos'
+    },
+    unlocked: false
+  },
+  {
     id: 'wishlist_collector',
     title: 'Colecionador de Sonhos',
     description: 'Adicione 5 profissões à sua lista de desejos',
@@ -158,6 +206,7 @@ export const checkAchievementUnlock = (
     areasExplored: string[]
     testsCompleted: number
     wishlistSize: number
+    favoritesCount: number
   }
 ): boolean => {
   const { type, target } = achievement.condition
@@ -171,6 +220,8 @@ export const checkAchievementUnlock = (
       return userProgress.testsCompleted >= target
     case 'wishlist_size':
       return userProgress.wishlistSize >= target
+    case 'favorites_count':
+      return userProgress.favoritesCount >= target
     default:
       return false
   }

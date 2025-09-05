@@ -108,6 +108,30 @@ CREATE TABLE IF NOT EXISTS user_preferences (
 -- Update user_progress table to reference users
 ALTER TABLE user_progress ADD COLUMN IF NOT EXISTS user_id UUID REFERENCES users(id);
 
+-- Create user_favorites table for profession favorites
+CREATE TABLE IF NOT EXISTS user_favorites (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+    profession_id INTEGER NOT NULL,
+    profession_name VARCHAR(255) NOT NULL,
+    profession_area VARCHAR(100) NOT NULL,
+    notes TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(user_id, profession_id)
+);
+
+-- Create user_profession_views table to track which professions users have viewed
+CREATE TABLE IF NOT EXISTS user_profession_views (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+    profession_id INTEGER NOT NULL,
+    profession_name VARCHAR(255) NOT NULL,
+    view_count INTEGER DEFAULT 1,
+    first_viewed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    last_viewed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(user_id, profession_id)
+);
+
 -- Create indexes for better performance
 CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
 CREATE INDEX IF NOT EXISTS idx_user_profiles_user_id ON user_profiles(user_id);
@@ -116,6 +140,10 @@ CREATE INDEX IF NOT EXISTS idx_professional_info_user_id ON professional_info(us
 CREATE INDEX IF NOT EXISTS idx_work_experiences_user_id ON work_experiences(user_id);
 CREATE INDEX IF NOT EXISTS idx_career_goals_user_id ON career_goals(user_id);
 CREATE INDEX IF NOT EXISTS idx_user_preferences_user_id ON user_preferences(user_id);
+CREATE INDEX IF NOT EXISTS idx_user_favorites_user_id ON user_favorites(user_id);
+CREATE INDEX IF NOT EXISTS idx_user_favorites_profession_id ON user_favorites(profession_id);
+CREATE INDEX IF NOT EXISTS idx_user_profession_views_user_id ON user_profession_views(user_id);
+CREATE INDEX IF NOT EXISTS idx_user_profession_views_profession_id ON user_profession_views(profession_id);
 
 -- Insert default preferences template
 INSERT INTO user_preferences (

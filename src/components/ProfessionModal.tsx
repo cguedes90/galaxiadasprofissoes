@@ -2,6 +2,8 @@
 
 import { motion } from 'framer-motion'
 import { Profession } from '@/types/profession'
+import FavoriteButton from './FavoriteButton'
+import ComparisonButton from './ComparisonButton'
 
 interface ProfessionModalProps {
   profession: Profession
@@ -55,12 +57,25 @@ export default function ProfessionModal({ profession, onClose, onRelatedProfessi
               <p className="text-gray-600">{profession.area}</p>
             </div>
           </div>
-          <button
-            onClick={onClose}
-            className="text-gray-400 hover:text-gray-600 text-2xl leading-none"
-          >
-            ×
-          </button>
+          
+          <div className="flex items-center gap-3">
+            <ComparisonButton 
+              profession={profession} 
+              size="lg" 
+              showLabel={true}
+            />
+            <FavoriteButton 
+              profession={profession} 
+              size="lg" 
+              showLabel={true}
+            />
+            <button
+              onClick={onClose}
+              className="text-gray-400 hover:text-gray-600 text-2xl leading-none"
+            >
+              ×
+            </button>
+          </div>
         </div>
 
         {/* Content */}
