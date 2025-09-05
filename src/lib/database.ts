@@ -15,6 +15,9 @@ const pool = new Pool({
     rejectUnauthorized: false
   },
   
+  // UTF-8 encoding settings
+  client_encoding: 'UTF8',
+  
   // Reconnection settings
   allowExitOnIdle: false,
 })

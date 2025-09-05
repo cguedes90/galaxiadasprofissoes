@@ -114,7 +114,85 @@ const EMERGING_PROFESSIONS = [
 
 export async function POST(request: Request) {
   try {
-    const { count = 1 } = await request.json()
+    const body = await request.json()
+    
+    // Se tem dados de profissão, é uma sugestão do usuário
+    if (body.name && body.description) {
+      const {
+        name,
+        description,
+        area,
+        required_education,
+        salary_min,
+        salary_max,
+        formation_time,
+        main_activities,
+        certifications,
+        related_professions,
+        icon_color,
+        x_position,
+        y_position,
+        status = 'pending'
+      } = body
+
+      // Primeiro, criar a tabela se não existir
+      await query(`
+        CREATE TABLE IF NOT EXISTS suggested_professions (
+          id SERIAL PRIMARY KEY,
+          name VARCHAR(255) NOT NULL,
+          description TEXT NOT NULL,
+          area VARCHAR(100) NOT NULL,
+          required_education TEXT,
+          salary_min INTEGER DEFAULT 0,
+          salary_max INTEGER DEFAULT 0,
+          formation_time VARCHAR(50) DEFAULT '4 anos',
+          main_activities JSONB DEFAULT '[]',
+          certifications JSONB DEFAULT '[]',
+          related_professions JSONB DEFAULT '[]',
+          icon_color VARCHAR(7) DEFAULT '#ffffff',
+          x_position INTEGER DEFAULT 0,
+          y_position INTEGER DEFAULT 0,
+          status VARCHAR(20) DEFAULT 'pending',
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+          approved_at TIMESTAMP,
+          created_by VARCHAR(255)
+        )
+      `)
+
+      // Validação básica
+      if (!name || !description || !area) {
+        return NextResponse.json({
+          success: false,
+          message: 'Nome, descrição e área são obrigatórios'
+        }, { status: 400 })
+      }
+
+      // Salvar na tabela de sugestões
+      const result = await query(`
+        INSERT INTO suggested_professions 
+        (name, description, area, required_education, salary_min, salary_max, 
+         formation_time, main_activities, certifications, related_professions, 
+         icon_color, x_position, y_position, status) 
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14) 
+        RETURNING *
+      `, [
+        name, description, area, required_education, salary_min || 0, salary_max || 0,
+        formation_time || '4 anos', JSON.stringify(main_activities || []), 
+        JSON.stringify(certifications || []), JSON.stringify(related_professions || []),
+        icon_color || '#ffffff', x_position || 0, y_position || 0, status
+      ])
+
+      console.log('✅ Nova profissão sugerida salva:', result.rows[0])
+
+      return NextResponse.json({
+        success: true,
+        message: 'Profissão sugerida com sucesso! Será analisada pela equipe.',
+        data: result.rows[0]
+      })
+    }
+
+    // Caso contrário, retorna sugestões pré-definidas (comportamento original)
+    const { count = 1 } = body
     
     // Pegar profissões que já existem no banco
     const existingProfessions = await query('SELECT name FROM professions')
@@ -146,10 +224,10 @@ export async function POST(request: Request) {
       instructions: 'Use a API /api/professions/add para adicionar essas profissões'
     })
     
-  } catch (error) {
-    console.error('Erro ao sugerir profissões:', error)
+  } catch (error: any) {
+    console.error('Erro ao processar sugestão:', error)
     return NextResponse.json(
-      { error: 'Erro interno do servidor' },
+      { success: false, message: 'Erro interno do servidor', error: error?.message || 'Erro desconhecido' },
       { status: 500 }
     )
   }

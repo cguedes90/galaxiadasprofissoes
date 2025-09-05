@@ -4,6 +4,7 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Profession } from '@/types/profession'
 import ProfessionModal from './ProfessionModal'
+import AddProfessionModal from './AddProfessionModal'
 import SearchBar from './SearchBar'
 import { fallbackProfessions } from '@/data/fallback-professions'
 
@@ -11,6 +12,7 @@ export default function Galaxy() {
   const [professions, setProfessions] = useState<Profession[]>([])
   const [totalProfessions, setTotalProfessions] = useState<number>(0)
   const [selectedProfession, setSelectedProfession] = useState<Profession | null>(null)
+  const [showAddModal, setShowAddModal] = useState(false)
   const [position, setPosition] = useState({ x: 0, y: 0 })
   const [scale, setScale] = useState(1)
   const [isDragging, setIsDragging] = useState(false)
@@ -23,10 +25,11 @@ export default function Galaxy() {
   const fetchProfessions = useCallback(async () => {
     try {
       const params = new URLSearchParams()
+      params.append('all', 'true') // Buscar todas as profissões
       if (searchQuery) params.append('search', searchQuery)
       if (selectedArea) params.append('area', selectedArea)
       
-      console.log(`🚀 Buscando profissões da API principal`)
+      console.log(`🚀 Buscando todas as profissões da API principal`)
       const response = await fetch(`/api/professions?${params}`)
       console.log('📊 API Response status:', response.status)
       
@@ -36,8 +39,8 @@ export default function Galaxy() {
       if (result.success && Array.isArray(result.data)) {
         console.log(`✅ Carregadas ${result.data.length} profissões`)
         setProfessions(result.data)
-        // Pega o total do meta.pagination ou usa o tamanho do array como fallback
-        const totalFromAPI = result.meta?.pagination?.total || result.data.length
+        // Pega o total do meta.total ou meta.pagination.total ou usa o tamanho do array como fallback
+        const totalFromAPI = result.meta?.total || result.meta?.pagination?.total || result.data.length
         console.log(`🔢 Total de profissões: ${totalFromAPI}`)
         setTotalProfessions(totalFromAPI)
       } else {
@@ -151,6 +154,42 @@ export default function Galaxy() {
     }
   }
 
+  const handleAddProfession = () => {
+    setShowAddModal(true)
+  }
+
+  const handleSubmitProfession = async (professionData: any) => {
+    try {
+      console.log('📝 Enviando nova profissão:', professionData)
+      
+      // Criar uma nova API específica para profissões sugeridas
+      const response = await fetch('/api/professions/suggest', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          ...professionData,
+          status: 'pending' // Marca como pendente de aprovação
+        })
+      })
+
+      const result = await response.json()
+      
+      if (result.success) {
+        console.log('✅ Profissão enviada com sucesso')
+        alert('✨ Obrigado! Sua sugestão de profissão foi enviada e será analisada pela nossa equipe. Em breve ela poderá aparecer na galáxia!')
+        setShowAddModal(false)
+      } else {
+        console.error('❌ Erro ao enviar profissão:', result.message)
+        alert('Ops! Houve um erro ao enviar sua sugestão. Tente novamente.')
+      }
+    } catch (error) {
+      console.error('❌ Erro de rede ao enviar profissão:', error)
+      alert('Erro de conexão. Verifique sua internet e tente novamente.')
+    }
+  }
+
   const areas = Array.from(new Set(professions.map(p => p.area)))
 
   // Filter professions based on search query and selected area
@@ -174,6 +213,7 @@ export default function Galaxy() {
         selectedArea={selectedArea}
         setSelectedArea={setSelectedArea}
         areas={areas}
+        onAddProfession={handleAddProfession}
       />
 
       {/* Galaxy Container */}
@@ -254,6 +294,16 @@ export default function Galaxy() {
             profession={selectedProfession}
             onClose={() => setSelectedProfession(null)}
             onRelatedProfessionClick={handleRelatedProfessionClick}
+          />
+        )}
+      </AnimatePresence>
+
+      {/* Add Profession Modal */}
+      <AnimatePresence>
+        {showAddModal && (
+          <AddProfessionModal
+            onClose={() => setShowAddModal(false)}
+            onSubmit={handleSubmitProfession}
           />
         )}
       </AnimatePresence>

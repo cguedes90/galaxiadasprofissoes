@@ -10,11 +10,12 @@ async function handleGET(request: NextRequest) {
     const { searchParams } = new URL(request.url)
     const search = searchParams.get('search')?.trim()
     const area = searchParams.get('area')?.trim()
+    const all = searchParams.get('all') === 'true'
     const page = Math.max(1, parseInt(searchParams.get('page') || '1'))
-    const limit = Math.min(100, Math.max(1, parseInt(searchParams.get('limit') || '20')))
-    const offset = (page - 1) * limit
+    const limit = all ? 1000 : Math.min(100, Math.max(1, parseInt(searchParams.get('limit') || '20')))
+    const offset = all ? 0 : (page - 1) * limit
 
-    console.log('GET /api/professions', { search, area, page, limit })
+    console.log('GET /api/professions', { search, area, page, limit, all })
 
     // Direct database query - no cache, no Redis dependencies
 
@@ -28,6 +29,11 @@ async function handleGET(request: NextRequest) {
       params.push(area)
     }
 
+    if (search) {
+      conditions.push(`(name ILIKE $${params.length + 1} OR description ILIKE $${params.length + 1} OR area ILIKE $${params.length + 1})`)
+      params.push(`%${search}%`)
+    }
+
     if (conditions.length > 0) {
       sql += ' WHERE ' + conditions.join(' AND ')
     }
@@ -37,18 +43,32 @@ async function handleGET(request: NextRequest) {
     // Get total count for pagination
     let countSql = 'SELECT COUNT(*) FROM professions'
     const countParams: any[] = []
+    let countConditionIndex = 1
     
     if (area) {
-      countSql += ' WHERE area = $1'
+      countSql += ` WHERE area = $${countConditionIndex}`
       countParams.push(area)
+      countConditionIndex++
+    }
+    
+    if (search) {
+      const searchCondition = `(name ILIKE $${countConditionIndex} OR description ILIKE $${countConditionIndex} OR area ILIKE $${countConditionIndex})`
+      if (area) {
+        countSql += ` AND ${searchCondition}`
+      } else {
+        countSql += ` WHERE ${searchCondition}`
+      }
+      countParams.push(`%${search}%`)
     }
     
     const countResult = await query(countSql, countParams)
     const total = parseInt(countResult.rows[0].count)
 
-    // Apply pagination to main query
-    sql += ` LIMIT $${params.length + 1} OFFSET $${params.length + 2}`
-    params.push(limit, offset)
+    // Apply pagination to main query only if not requesting all
+    if (!all) {
+      sql += ` LIMIT $${params.length + 1} OFFSET $${params.length + 2}`
+      params.push(limit, offset)
+    }
 
     const result = await query(sql, params)
     
@@ -57,21 +77,28 @@ async function handleGET(request: NextRequest) {
       returned: result.rows.length,
       page,
       limit,
-      filters: { area }
+      all,
+      filters: { area, search }
     })
 
-    return ApiResponse.success(result.rows, {
-      pagination: {
+    const meta: any = {
+      filters: { area, search },
+      cached: false,
+      total
+    }
+
+    if (!all) {
+      meta.pagination = {
         page,
         limit,
         total,
         totalPages: Math.ceil(total / limit),
         hasNext: page < Math.ceil(total / limit),
         hasPrevious: page > 1
-      },
-      filters: { area },
-      cached: false
-    })
+      }
+    }
+
+    return ApiResponse.success(result.rows, meta)
   } catch (error) {
     console.error('Database error in GET /api/professions', error)
     return ApiResponse.databaseError('Falha ao buscar profissões')

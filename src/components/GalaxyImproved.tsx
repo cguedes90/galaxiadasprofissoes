@@ -371,6 +371,7 @@ export default function Galaxy() {
         selectedArea={selectedArea}
         setSelectedArea={setSelectedArea}
         areas={areas}
+        onAddProfession={() => console.log('Add profession - feature not implemented in this version')}
       />
 
       {/* Top Right Controls */}

@@ -20,7 +20,8 @@
       "WebFetch(domain:www.galaxiadasprofissoes.com.br)",
       "WebFetch(domain:localhost)",
       "Bash(npm run:*)",
-      "Bash(npx ts-node:*)"
+      "Bash(npx ts-node:*)",
+      "Bash(chcp:*)"
     ],
     "deny": [],
     "ask": []
