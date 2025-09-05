@@ -52,7 +52,7 @@ export default function Galaxy() {
     const maxAttempts = 100 // Mais tentativas
 
     return professions.map((profession, index) => {
-      let x, y, attempts = 0
+      let x: number, y: number, attempts = 0
       let validPosition = false
 
       // Usar seed + index para gerar posições determinísticas
