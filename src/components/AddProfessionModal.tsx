@@ -13,6 +13,7 @@ export default function AddProfessionModal({ onClose, onSubmit }: AddProfessionM
     name: '',
     description: '',
     area: '',
+    custom_area: '',
     required_education: '',
     salary_min: '',
     salary_max: '',
@@ -28,7 +29,8 @@ export default function AddProfessionModal({ onClose, onSubmit }: AddProfessionM
   const areas = [
     'Tecnologia', 'Saúde', 'Design', 'Educação', 'Engenharia', 
     'Administração', 'Direito', 'Arte', 'Ciências', 'Comunicação',
-    'Psicologia', 'Arquitetura', 'Finanças', 'Marketing', 'Gastronomia'
+    'Psicologia', 'Arquitetura', 'Finanças', 'Marketing', 'Gastronomia',
+    'Outra'
   ]
 
   const colors = [
@@ -52,6 +54,9 @@ export default function AddProfessionModal({ onClose, onSubmit }: AddProfessionM
     if (!formData.name.trim()) newErrors.name = 'Nome é obrigatório'
     if (!formData.description.trim()) newErrors.description = 'Descrição é obrigatória'
     if (!formData.area.trim()) newErrors.area = 'Área é obrigatória'
+    if (formData.area === 'Outra' && !formData.custom_area.trim()) {
+      newErrors.custom_area = 'Especifique a área personalizada'
+    }
     if (!formData.required_education.trim()) newErrors.required_education = 'Formação é obrigatória'
     
     if (formData.salary_min && formData.salary_max) {
@@ -73,6 +78,7 @@ export default function AddProfessionModal({ onClose, onSubmit }: AddProfessionM
 
     const professionData = {
       ...formData,
+      area: formData.area === 'Outra' ? formData.custom_area : formData.area,
       salary_min: formData.salary_min ? parseInt(formData.salary_min) : 0,
       salary_max: formData.salary_max ? parseInt(formData.salary_max) : 0,
       main_activities: formData.main_activities ? formData.main_activities.split(',').map(item => item.trim()) : [],
@@ -164,6 +170,21 @@ export default function AddProfessionModal({ onClose, onSubmit }: AddProfessionM
                 ))}
               </select>
               {errors.area && <p className="text-red-500 text-xs mt-1">{errors.area}</p>}
+              
+              {/* Campo personalizado para área "Outra" */}
+              {formData.area === 'Outra' && (
+                <div className="mt-2">
+                  <input
+                    type="text"
+                    name="custom_area"
+                    value={formData.custom_area}
+                    onChange={handleInputChange}
+                    className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${errors.custom_area ? 'border-red-500' : 'border-gray-300'}`}
+                    placeholder="Digite o nome da área personalizada"
+                  />
+                  {errors.custom_area && <p className="text-red-500 text-xs mt-1">{errors.custom_area}</p>}
+                </div>
+              )}
             </div>
           </div>
 

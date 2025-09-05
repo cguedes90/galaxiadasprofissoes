@@ -7,6 +7,7 @@ interface SearchBarProps {
   setSelectedArea: (area: string) => void
   areas: string[]
   onAddProfession: () => void
+  onContact: () => void
 }
 
 export default function SearchBar({ 
@@ -15,7 +16,8 @@ export default function SearchBar({
   selectedArea, 
   setSelectedArea, 
   areas,
-  onAddProfession
+  onAddProfession,
+  onContact
 }: SearchBarProps) {
   return (
     <div className="absolute top-4 left-4 right-4 z-10 flex flex-col sm:flex-row gap-2 sm:gap-3">
@@ -50,6 +52,13 @@ export default function SearchBar({
         className="px-4 py-2 text-sm bg-green-500 bg-opacity-80 hover:bg-opacity-100 text-white rounded-lg transition-all hover:scale-105 font-medium shadow-lg"
       >
         ➕ Incluir Profissão
+      </button>
+      
+      <button
+        onClick={onContact}
+        className="px-4 py-2 text-sm bg-blue-500 bg-opacity-80 hover:bg-opacity-100 text-white rounded-lg transition-all hover:scale-105 font-medium shadow-lg"
+      >
+        📧 Contato
       </button>
       
       {(searchQuery || selectedArea) && (

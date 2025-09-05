@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { Profession } from '@/types/profession'
 import ProfessionModal from './ProfessionModal'
 import AddProfessionModal from './AddProfessionModal'
+import ContactModal from './ContactModal'
 import SearchBar from './SearchBar'
 import { fallbackProfessions } from '@/data/fallback-professions'
 
@@ -13,6 +14,7 @@ export default function Galaxy() {
   const [totalProfessions, setTotalProfessions] = useState<number>(0)
   const [selectedProfession, setSelectedProfession] = useState<Profession | null>(null)
   const [showAddModal, setShowAddModal] = useState(false)
+  const [showContactModal, setShowContactModal] = useState(false)
   const [position, setPosition] = useState({ x: 0, y: 0 })
   const [scale, setScale] = useState(1)
   const [isDragging, setIsDragging] = useState(false)
@@ -222,6 +224,16 @@ export default function Galaxy() {
     setPosition({ x: newX, y: newY })
   }
 
+  const handleZoomIn = () => {
+    const newScale = Math.min(2.5, scale * 1.2)
+    setScale(newScale)
+  }
+
+  const handleZoomOut = () => {
+    const newScale = Math.max(0.3, scale * 0.8)
+    setScale(newScale)
+  }
+
   // Adicionar event listeners globais para mouse move e up
   useEffect(() => {
     if (isDragging) {
@@ -316,7 +328,29 @@ export default function Galaxy() {
         setSelectedArea={setSelectedArea}
         areas={areas}
         onAddProfession={handleAddProfession}
+        onContact={() => setShowContactModal(true)}
       />
+
+      {/* Zoom Controls */}
+      <div className="absolute top-4 right-4 z-10 flex flex-col gap-2">
+        <button
+          onClick={handleZoomIn}
+          className="w-10 h-10 bg-white bg-opacity-20 backdrop-blur-md text-white rounded-lg border border-white border-opacity-30 hover:bg-opacity-30 transition-all hover:scale-105 flex items-center justify-center text-lg font-bold"
+          title="Aumentar zoom"
+        >
+          +
+        </button>
+        <button
+          onClick={handleZoomOut}
+          className="w-10 h-10 bg-white bg-opacity-20 backdrop-blur-md text-white rounded-lg border border-white border-opacity-30 hover:bg-opacity-30 transition-all hover:scale-105 flex items-center justify-center text-lg font-bold"
+          title="Diminuir zoom"
+        >
+          −
+        </button>
+        <div className="text-xs text-white text-center mt-1 opacity-70">
+          {Math.round(scale * 100)}%
+        </div>
+      </div>
 
       {/* Galaxy Container */}
       <div
@@ -406,6 +440,15 @@ export default function Galaxy() {
           <AddProfessionModal
             onClose={() => setShowAddModal(false)}
             onSubmit={handleSubmitProfession}
+          />
+        )}
+      </AnimatePresence>
+
+      {/* Contact Modal */}
+      <AnimatePresence>
+        {showContactModal && (
+          <ContactModal
+            onClose={() => setShowContactModal(false)}
           />
         )}
       </AnimatePresence>
