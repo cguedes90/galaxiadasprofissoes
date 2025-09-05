@@ -21,7 +21,8 @@
       "WebFetch(domain:localhost)",
       "Bash(npm run:*)",
       "Bash(npx ts-node:*)",
-      "Bash(chcp:*)"
+      "Bash(chcp:*)",
+      "Bash(git commit:*)"
     ],
     "deny": [],
     "ask": []
