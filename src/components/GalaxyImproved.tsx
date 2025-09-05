@@ -467,6 +467,7 @@ export default function Galaxy() {
         setSelectedArea={setSelectedArea}
         areas={areas}
         onAddProfession={() => console.log('Add profession - feature not implemented in this version')}
+        onContact={() => console.log('Contact - feature not implemented in this version')}
       />
 
       {/* Top Right Controls */}
